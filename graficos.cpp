@@ -2,12 +2,21 @@
 #include "algoritmo.h"
 #include <wx/wx.h>
 
-MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "App Separada", wxPoint(50, 50), wxSize(300, 200)) {
+MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxSize(1280, 720)) {
     auto* panel = new wxPanel(this, wxID_ANY);
-    auto* button = new wxButton(panel, wxID_ANY, "Seleccionar Archivo",
-                                    wxPoint(50, 60), wxSize(200, 30));
 
-    button->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
+    auto* cargar_archivo = new wxButton(panel, wxID_ANY, "Cargar Archivo",wxPoint(10, 10), wxSize(150, 30));
+    cargar_archivo->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
+
+    auto* etiqueta1 = new wxStaticText(panel, wxID_ANY, "Semilla: ",wxPoint(10,60));
+    etiqueta1->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
+
+    auto* texbox1 = new wxTextCtrl(panel, wxID_ANY, "1",wxPoint(65,55));
+    texbox1->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
+
+    auto* textbox2 = new wxTextCtrl(panel, wxID_ANY, "",wxPoint(10,90), wxSize(400,550),wxTE_READONLY | wxTE_MULTILINE);
+    textbox2->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
+
     wxFrameBase::CreateStatusBar();
 }
 
