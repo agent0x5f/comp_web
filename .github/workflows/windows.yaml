@@ -1,0 +1,102 @@
+name: compila_final_cache_total
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Descargar codigo fuente
+        uses: actions/checkout@v4
+
+      # 1. CACHE UNIFICADO (wxWidgets + OpenCV)
+      # Ahora incluimos ambas rutas en 'path'
+      - name: Cache Dependencias
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\tools\wxwidgets
+            C:\tools\opencv
+          # Actualizamos la key para crear un cache nuevo que incluya ambas cosas
+          key: ${{ runner.os }}-deps-wx3.2.4-ocv-static-v2
+
+      # 2. INSTALAR OPENCV (Solo si NO hubo cache-hit)
+      - name: Instalar OpenCV
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: choco install opencv -y
+
+      # 3. COMPILAR WXWIDGETS (Solo si NO hubo cache-hit)
+      - name: Descargar y Compilar wxWidgets (Static)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.4/wxWidgets-3.2.4.7z"
+          if (!(Test-Path C:\tools\wxwidgets)) { New-Item -ItemType Directory -Force -Path C:\tools\wxwidgets }
+          
+          curl.exe -fL $url -o wx_source.7z --retry 3
+          7z x wx_source.7z -oC:\tools\wxwidgets -y
+          
+          cd C:\tools\wxwidgets\build\msw
+          cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat`" && nmake /f makefile.vc BUILD=release SHARED=0 TARGET_CPU=AMD64"
+
+      - name: Generar Timestamp
+        id: times
+        shell: powershell
+        run: |
+          $timestamp = Get-Date -Format "MMdd_HHmm"
+          echo "timestamp=$timestamp" >> $env:GITHUB_OUTPUT
+
+      - name: Compilar y Organizar
+        shell: powershell
+        env:
+          TS: ${{ steps.times.outputs.timestamp }}
+        run: |
+          # --- RUTAS ---
+          $cvBase = "C:\tools\opencv\build"
+          $cvInc = "$cvBase\include"
+          $cvLib = "$cvBase\x64\vc16\lib"
+          $cvBin = "$cvBase\x64\vc16\bin"
+          
+          $wxBase = "C:\tools\wxwidgets"
+          $wxLibPath = "$wxBase\lib\vc_x64_lib"
+          $wxSetupInc = "$wxLibPath\mswu"
+
+          $exeName = "app_$env:TS.exe"
+          
+          # Estructura de salida
+          New-Item -ItemType Directory -Force -Path dist
+          New-Item -ItemType Directory -Force -Path dist\codigo_fuente
+
+          # --- LIBRERIAS ---
+          $wxLibs = "wxmsw32u_core.lib wxbase32u.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib comctl32.lib rpcrt4.lib winmm.lib shlwapi.lib version.lib"
+          $cvLibs = "opencv_world4130.lib"
+          $sysLibs = "user32.lib gdi32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib winspool.lib"
+
+          # --- COMPILACIÓN ---
+          # --- COMPILACIÓN ---
+          # Agregamos /std:c++17 al inicio de las banderas
+          $msvcCmd = "cl.exe *.cpp /std:c++17 /I`"$cvInc`" /I`"$wxBase\include`" /I`"$wxSetupInc`" /D`"__WXMSW__`" /D`"UNICODE`" /D`"_UNICODE`" /EHsc /MD /D`"NDEBUG`" /link /LIBPATH:`"$cvLib`" /LIBPATH:`"$wxLibPath`" $cvLibs $wxLibs $sysLibs /OUT:dist\$exeName"
+          
+          cmd.exe /c "call `"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat`" && $msvcCmd" # --- COPIAR DEPENDENCIAS ---
+          echo "Copiando DLLs..."
+          copy "$cvBin\opencv_world4130.dll" dist\
+          
+          $sysDlls = @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")
+          foreach ($dll in $sysDlls) {
+              $found = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" -Recurse -Filter $dll | Select-Object -First 1
+              if ($found) { copy $found.FullName dist\ }
+          }
+          
+          # --- RESPALDO DE CÓDIGO FUENTE ---
+          echo "Respaldando fuentes..."
+          # Copia recursiva excluyendo basura
+          Get-ChildItem -Path . -Exclude ".git", ".github", "dist", "*.exe", "*.obj", "*.7z" | Copy-Item -Destination dist\codigo_fuente -Recurse -Force
+
+          echo "Contenido final:"
+          Get-ChildItem -Path dist -Recurse
+
+      - name: Subir Artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ steps.times.outputs.timestamp }}
+          path: dist/*
