@@ -4,9 +4,8 @@
 #include <string>
 
 class Algoritmo {
-public:
-    // Asegúrate de que el nombre sea EXACTAMENTE este
-    static std::string procesarImagen(const std::string& ruta);
+    public:
+        static std::string procesarImagen(const std::string& ruta);
 };
 
 #endif
