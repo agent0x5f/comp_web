@@ -16,7 +16,7 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxS
 
     auto* textbox2 = new wxTextCtrl(panel, wxID_ANY, "",wxPoint(10,90), wxSize(400,550),wxTE_READONLY | wxTE_MULTILINE);
     textbox2->Bind(wxEVT_BUTTON, &MyFrame::OnOpenExplorer, this);
-
+    //comment
     wxFrameBase::CreateStatusBar();
 }
 
