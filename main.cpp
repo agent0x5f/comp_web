@@ -1,7 +1,6 @@
 #include <wx/wx.h>
 #include "graficos.h"
 
-bool verbo = false; //mostrar todas las calculaciones.
 
 class MyApp : public wxApp {
 public:
