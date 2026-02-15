@@ -13,12 +13,11 @@ using namespace std;
 string datos; //guarda el dataset de entrada
 int num_param = 0; //argc
 vector<int>params; //args
-vector<vector<int>> matrizDatos;
-// Inicializa el vector con tantos ceros como filas tenga tu matriz
-vector<int> lista_indices;
+vector<vector<int>> Algoritmo::matrizDatos;
+vector<int> Algoritmo::listaIndices;
 bool Algoritmo::verbo = true; //mostrar todas las calculaciones.
 int Algoritmo::seed = 1;
-int num_clases = 0; //cuantas clases existen acualmente.
+int num_clases = 0; //cuantas clases existen actualmente.
 double Algoritmo::umbral = 0.5;
 
 /**
@@ -53,23 +52,25 @@ string Algoritmo::procesarEntrada(string const& path, wxTextCtrl* salida) {
         }
     }
     archivo.close();
-    lista_indices.assign(matrizDatos.size(), 0);
+    listaIndices.assign(matrizDatos.size(), -1);
     std::filesystem::path p(path);
     string nombreArchivo = p.filename().string();
     return nombreArchivo;
+
 }
 
 void Algoritmo::ejecutarCalculo(wxTextCtrl* out) {
     if (out) {
-        std::fill(lista_indices.begin(), lista_indices.end(), 0); //reinicio mi vector de clases.
+        std::fill(listaIndices.begin(), listaIndices.end(), -1); //reinicio mi vector de clases.
+        num_clases = 0; // Reiniciamos el contador de grupos encontrados
         int n = obtenerIndiceAleatorio();
-        lista_indices[n]=0; //el elemento n es la clase 0
+        listaIndices[n]=0; //el elemento n es la clase 0
         //zona de impresion a la "consola"
         if (!matrizDatos.empty()) {
             log("Matriz cargada: " + to_string(matrizDatos.size()) + " filas x " + to_string(matrizDatos[0].size()) + " columnas.\n",out);
             log("Seleccionando primer grupo #"+std::to_string(n)+": " + logM(n)+'\n',out);
             int lejano = obtenerMasLejano(n, out); //calculamos el más lejano para el segundo grupo.
-            lista_indices[lejano] = ++num_clases; //es la clase '1'
+            listaIndices[lejano] = ++num_clases; //es la clase '1'
             log("Segundo grupo #"+std::to_string(lejano)+": "+logM(lejano)+'\n',out);
 
         }
@@ -92,7 +93,7 @@ int Algoritmo::obtenerIndiceAleatorio() {
     if (matrizDatos.empty()) return -1;
     // 1. Inicializamos el motor con la semilla que capturamos del textbox
     std::mt19937 generador(seed);
-    //Aqui podria poner un msgbox para decir que la semilla debe ser <= al número de renglones.
+    //Aquí podria poner un msgbox para decir que la semilla debe ser <= al número de renglones.
 
     // 2. Definimos el rango: de 0 al total de filas menos 1
     std::uniform_int_distribution<int> distribucion(0, matrizDatos.size() - 1);
@@ -126,11 +127,11 @@ int Algoritmo::obtenerMasLejano(int indiceReferencia,wxTextCtrl *out) {
             int xActual = matrizDatos[i][0];
             int yActual = matrizDatos[i][1];
 
-            // Cálculo de distancia al cuadrado (evitamos sqrt)
-            // (x2 - x1)^2 + (y2 - y1)^2
+            // Cálculo de distancia euclides
+            // sqrt(x2 - x1)^2 + (y2 - y1)^2
             double distSq = sqrt(pow(xActual - xRef, 2) + pow(yActual - yRef, 2));
 
-            //Aquí podemos mutear el log con el boton verboso
+            //Aquí podemos mutear el log con el boton verboso, falta implementar
             if (verbo && out) {
                 // Creamos un flujo de string para formatear
                 std::stringstream ss;

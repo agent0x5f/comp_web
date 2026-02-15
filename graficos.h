@@ -9,9 +9,7 @@ public:
     MyFrame();
     void OnOpenExplorer(const wxCommandEvent& event);
     void OnCalculaClick(wxCommandEvent& event);
-
     void OnEscritura(wxCommandEvent &event);
-
     static void log(std::string msg, wxTextCtrl *out);
 
 private:
@@ -23,8 +21,7 @@ private:
     wxTextCtrl* consola; //terminal
  //   wxCheckBox* checkbox1; //verbo checkbox
     MyGraphCanvas *canvas;
-    wxButton* grafica; //dibuja en el canvas
-    wxButton* exporta; //imprime el cvs con las clases resultantes
+    wxButton* exporta; //imprime el csv con las clases resultantes
 };
 
 #endif

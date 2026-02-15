@@ -9,9 +9,6 @@ class MyGraphCanvas : public wxPanel {
 public:
     MyGraphCanvas(wxWindow* parent, wxPoint pos, wxSize size);
     void OnPaint(wxPaintEvent& event);
-
-    // Aquí puedes añadir variables para tus datos después
-    // std::vector<double> datos;
 };
 
 #endif
