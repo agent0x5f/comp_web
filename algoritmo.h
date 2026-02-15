@@ -3,7 +3,6 @@
 
 #include <string>
 
-// Declaración adelantada para no incluir todo wx.h aquí y acelerar la compilación
 class wxTextCtrl;
 
 class Algoritmo {

@@ -55,7 +55,8 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
 void MyFrame::OnCalculaClick(wxCommandEvent& event) {
     //Feedback visual en la barra de estado
     SetStatusText("Cálculo ejecutado desde Algoritmo.");
-    log("Calculando...",consola);
+    log("==============================\n",consola);
+    log("Calculando...\n",consola);
     // 2. Llamamos al algoritmo y le pasamos nuestra consola
     Algoritmo::ejecutarCalculo(consola);
 
