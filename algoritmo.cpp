@@ -56,7 +56,7 @@ string Algoritmo::procesarEntrada(string const& path, wxTextCtrl* salida) {
     lista_indices.assign(matrizDatos.size(), 0);
     std::filesystem::path p(path);
     string nombreArchivo = p.filename().string();
-    return p;
+    return nombreArchivo;
 }
 
 void Algoritmo::ejecutarCalculo(wxTextCtrl* out) {
