@@ -76,7 +76,6 @@ void MyFrame::OnEscritura(wxCommandEvent& event){
             // Actualizamos la variable en la clase Algoritmo
             Algoritmo::seed = (int)valorTemporal;
             log(("Semilla actualizada: "+std::to_string(valorTemporal)+'\n'),consola);
-         //   log("sem mem: "+ std::to_string(Algoritmo::seed),consola);
         }
     }
 }

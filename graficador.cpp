@@ -1,6 +1,6 @@
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
-#include <wx/graphics.h> // Importante para wxGraphicsContext
+#include <wx/graphics.h>
 #include "graficador.h"
 #include "algoritmo.h"
 #include <algorithm>
@@ -28,7 +28,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
     double anchoGrafico = w - margin - rightMargin;
     double altoGrafico = h - 2.0 * margin;
 
-    // --- 0. PALETA DE COLORES ---
+    // --- PALETA DE COLORES ---
     std::vector<wxColour> paleta = {
         wxColour(150, 150, 150), // Grupo 0 Gris
         wxColour(215, 50, 50),   // Grupo 1 Rojo
@@ -45,7 +45,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
         wxColour(0, 0, 0)        // Grupo 12: Negro
         };
 
-    // --- 1. ENCONTRAR MÁXIMOS Y MÍNIMOS REALES ---
+    // --- ENCONTRAR MÁXIMOS Y MÍNIMOS REALES ---
     double minXReal = 0.0, maxXReal = 0.0;
     double minYReal = 0.0, maxYReal = 0.0;
 
@@ -63,14 +63,14 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
         }
     }
 
-    // TRUCO CLAVE: Forzamos a que el (0,0) siempre esté dentro del área visible
+    // Forzamos a que el (0,0) siempre esté dentro del área visible
     // para que podamos ver los ejes principales.
     if (minXReal > 0) minXReal = 0;
     if (maxXReal < 0) maxXReal = 0;
     if (minYReal > 0) minYReal = 0;
     if (maxYReal < 0) maxYReal = 0;
 
-    // --- 2. CÁLCULO DE LA CUADRÍCULA Y ESCALA ---
+    // --- CÁLCULO DE LA CUADRÍCULA Y ESCALA ---
     int divisiones = 10;
 
     // Agregamos un 10% de padding al rango total
@@ -98,12 +98,12 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
     double escalaX = anchoGrafico / (maxX - minX);
     double escalaY = altoGrafico / (maxY - minY);
 
-    // --- FUNCIONES LAMBDA DE TRADUCCIÓN ---
+    // --- FUNCIONES LAMBDA DE TRADUCCIÓN ESCALAMIENTO---
     // Estas funciones convierten cualquier valor matemático (X,Y) a píxeles de pantalla
     auto toScreenX = [&](double x) { return margin + (x - minX) * escalaX; };
     auto toScreenY = [&](double y) { return (h - margin) - (y - minY) * escalaY; };
 
-    // --- 3. DIBUJAR CUADRÍCULA Y TEXTOS ---
+    // DIBUJAR CUADRÍCULA Y TEXTOS ---
     wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
     fuente.SetPointSize(12);
     gc->SetFont(fuente, wxColour(80, 80, 80));
@@ -129,7 +129,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
         gc->DrawText(textoY, margin - tw - 8, actualYPantalla - (th / 2.0));
     }
 
-    // --- 4. DIBUJAR EJES PRINCIPALES (0,0) ---
+    // --- DIBUJAR EJES PRINCIPALES (0,0) ---
     // Encontramos dónde cayó exactamente el (0,0) en la pantalla
     double origenXPantalla = toScreenX(0);
     double origenYPantalla = toScreenY(0);
@@ -145,7 +145,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
         gc->StrokeLine(margin, origenYPantalla, w - rightMargin, origenYPantalla);
     }
 
-    // --- 5. DIBUJAR LOS PUNTOS ---
+    // --- DIBUJAR LOS PUNTOS ---
     if (!Algoritmo::matrizDatos.empty()) {
         gc->SetPen(*wxTRANSPARENT_PEN);
         double radioPunto = 5.0;
@@ -170,7 +170,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
         }
     }
 
-    // --- 6. DIBUJAR LA LEYENDA ---
+    // --- DIBUJAR LA LEYENDA ---
     int maxClaseEncontrada = -1;
     for (int c : Algoritmo::listaIndices) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
