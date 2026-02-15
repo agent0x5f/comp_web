@@ -5,7 +5,8 @@
 #include <random>
 #include <sstream>
 #include <cmath>
-#include  <iomanip>
+#include <iomanip>
+#include <algorithm>
 
 #include "graficos.h"
 using namespace std;
@@ -20,43 +21,59 @@ int Algoritmo::seed = 1;
 int num_clases = 0; //cuantas clases existen actualmente.
 double Algoritmo::umbral = 0.5;
 
-/**
- * Procesa la imagen (o archivo de datos) y actualiza la interfaz si se proporciona un puntero a un wxTextCtrl.
- * @param path Ruta del archivo seleccionado.
- * @param salida Puntero al wxTextCtrl donde se mostrarán los logs (opcional).
- * @return Un string con el nombre o estado del procesamiento.
- */
+
 string Algoritmo::procesarEntrada(string const& path, wxTextCtrl* salida) {
     std::ifstream archivo(path);
     if (!archivo.is_open()) return "Error al abrir";
-    matrizDatos.clear(); // Limpiamos datos previos
-    string linea;
-    while (getline(archivo, linea)) {
-        if (linea.empty()) continue; // Ignora líneas vacías
 
+    matrizDatos.clear();
+    string linea;
+
+    while (getline(archivo, linea)) {
+        // Quitamos espacios en blanco accidentales al inicio y final
+        linea.erase(0, linea.find_first_not_of(" \t\r\n"));
+
+        // Comentarios: Si la línea está vacía o empieza con '@', pero NO es el umbral
+        if (linea.empty()) continue;
+        if (linea[0] == '@' && linea.find("umbral") == string::npos) continue;
+
+        // Extracción del Umbral: Buscamos la etiqueta "@umbral:"
+        if (linea.find("@umbral:") != string::npos) {
+            try {
+                // Buscamos la posición después de los dos puntos
+                size_t posDospuntos = linea.find(":") + 1;
+                string valorStr = linea.substr(posDospuntos);
+                // Convertimos el resto de la línea a double
+                Algoritmo::umbral = std::stod(valorStr);
+                //FIXME: no se muestra en el log por el orden de ejecución
+                if (salida) log("Umbral actualizado: " + std::to_string(Algoritmo::umbral) + "\n", salida);
+            } catch (...) {
+                if (salida) log("Error: Formato de umbral incorrecto en el archivo.\n", salida);
+            }
+            continue; // No agregamos esta línea a la matriz de datos
+        }
+
+        // 4. Lectura de coordenadas (X, Y)
         stringstream ss(linea);
         string valor;
         vector<int> filaActual;
-        // Separamos por comas
+
         while (getline(ss, valor, ',')) {
             try {
-                // convertimos a int y agregamos a la fila
                 filaActual.push_back(stoi(valor));
-            } catch (...) {
-                log("Error al leer la fila",salida);
-            }
+            } catch (...) { /* Ignorar basura */ }
         }
 
         if (!filaActual.empty()) {
-            matrizDatos.push_back(filaActual); // Agregamos la fila a la matriz
+            matrizDatos.push_back(filaActual);
         }
     }
+
     archivo.close();
     listaIndices.assign(matrizDatos.size(), -1);
-    std::filesystem::path p(path);
-    string nombreArchivo = p.filename().string();
-    return nombreArchivo;
 
+    std::filesystem::path p(path);
+    return p.filename().string();
 }
 
 void Algoritmo::ejecutarCalculo(wxTextCtrl* out) {
@@ -67,11 +84,15 @@ void Algoritmo::ejecutarCalculo(wxTextCtrl* out) {
         listaIndices[n]=0; //el elemento n es la clase 0
         //zona de impresion a la "consola"
         if (!matrizDatos.empty()) {
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(2) << Algoritmo::umbral;
+            std::string resultado = ss.str();
+            log("Umbral: "+resultado+'\n',out);
             log("Matriz cargada: " + to_string(matrizDatos.size()) + " filas x " + to_string(matrizDatos[0].size()) + " columnas.\n",out);
             log("Seleccionando primer grupo #"+std::to_string(n)+": " + logM(n)+'\n',out);
             int lejano = obtenerMasLejano(n, out); //calculamos el más lejano para el segundo grupo.
             listaIndices[lejano] = ++num_clases; //es la clase '1'
-            log("Segundo grupo #"+std::to_string(lejano)+": "+logM(lejano)+'\n',out);
+            log("Seleccionando segundo grupo #"+std::to_string(lejano)+": "+logM(lejano)+'\n',out);
 
         }
 
@@ -87,6 +108,7 @@ string Algoritmo::logM(const int pos) {
 void Algoritmo::log(const string& msg,wxTextCtrl *out) {
     if (out) {
         out->AppendText(msg);
+        out->Update();
     }
 }
 int Algoritmo::obtenerIndiceAleatorio() {
@@ -102,7 +124,10 @@ int Algoritmo::obtenerIndiceAleatorio() {
 }
 
 int Algoritmo::obtenerMasLejano(int indiceReferencia,wxTextCtrl *out) {
-    log("Calculando distancias...\n",out);
+    if (verbo && out) {
+        log("Calculando distancias...\n",out);
+    }
+
     int masLejano = 0;
     double maxDistanciaSq = -1.0;
 

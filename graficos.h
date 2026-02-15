@@ -11,6 +11,7 @@ public:
     void OnCalculaClick(wxCommandEvent& event);
     void OnEscritura(wxCommandEvent &event);
     static void log(std::string msg, wxTextCtrl *out);
+    void OnCheckClick(wxCommandEvent& event);
 
 private:
     wxButton* cargar_archivo; //explorador del sistema
@@ -19,9 +20,9 @@ private:
     wxTextCtrl* textbox2; //archivo entrada
     wxButton* calcula; //run
     wxTextCtrl* consola; //terminal
- //   wxCheckBox* checkbox1; //verbo checkbox
     MyGraphCanvas *canvas;
     wxButton* exporta; //imprime el csv con las clases resultantes
+    wxCheckBox * checkbox1;
 };
 
 #endif

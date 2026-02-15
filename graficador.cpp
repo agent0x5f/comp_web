@@ -105,7 +105,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
 
     // --- 3. DIBUJAR CUADRÍCULA Y TEXTOS ---
     wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
-    fuente.SetPointSize(8);
+    fuente.SetPointSize(12);
     gc->SetFont(fuente, wxColour(80, 80, 80));
     gc->SetPen(wxPen(wxColour(220, 220, 220), 1)); // Gris claro
 
