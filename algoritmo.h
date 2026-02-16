@@ -12,12 +12,19 @@ public:
     static int seed;
     static bool verbo;
     static double umbral;
+    static double dist_mayor;
+    static std::vector<std::vector<float>> matrizDistancias;
+
     static std::string procesarEntrada(const std::string& path, wxTextCtrl* salida = nullptr);
     static void ejecutarCalculo(wxTextCtrl *out);
+    static void realizarClasificacion(wxTextCtrl *out);
+
     static std::string logM(int pos);
     static void log(const std::string& msg,wxTextCtrl *out);
     static int obtenerIndiceAleatorio();
-    static int obtenerMasLejano(int, wxTextCtrl *out);
+    static int obtenerMasLejano(int indiceReferencia, wxTextCtrl *out);
+    static void max_min(wxTextCtrl *out);
+    static int obtenerMasCercano(int indiceReferencia,wxTextCtrl *out);
 };
 
 #endif
