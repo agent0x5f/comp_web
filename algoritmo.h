@@ -17,7 +17,6 @@ public:
 
     static void max_min_ini(wxTextCtrl *out);
     static void realizarClasificacion(wxTextCtrl *out);
-
     static std::string logM(int pos);
     static void log(const std::string& msg,wxTextCtrl *out);
     static int obtenerIndiceAleatorio();

@@ -27,7 +27,7 @@ int limite = 0;//iteraciones de creacion de clases, solo para debug/limitar caso
 
 //recibe el índice y retorna un string con todos los elementos en formato x, y...
 string Algoritmo::logM(const int pos) {
-    string msg = std::to_string(matrizDatos[pos][0])+" ,"+ std::to_string(matrizDatos[pos][1]);
+    string msg = "["+std::to_string(matrizDatos[pos][0])+" ,"+ std::to_string(matrizDatos[pos][1])+"]";
     return msg;
 }
 //recibe un string y lo imprime en *out
@@ -75,7 +75,7 @@ int Algoritmo::obtenerMasLejano(int indiceReferencia,wxTextCtrl *out) {
                 std::stringstream ss;// Creamos un flujo de string para formatear
                 ss << std::fixed << std::setprecision(2) << distSq;
                 // Ahora construimos el mensaje usando ss.str()
-                string mensaje = "Dist: " + std::to_string(xActual) + ", "+std::to_string((yActual))+" | " + std::to_string(xRef)+", "+std::to_string((yRef)) + " = " + ss.str() + "\n";
+                string mensaje = "Dist: [" + std::to_string(xActual) + ", "+std::to_string((yActual))+"] - [" + std::to_string(xRef)+", "+std::to_string((yRef)) + "] = " + ss.str() + "\n";
                 log(mensaje, out);
             }
             if (distSq > maxDistanciaSq) {
@@ -114,7 +114,7 @@ int Algoritmo::obtenerMasCercano(int indiceReferencia,wxTextCtrl *out) {
                 std::stringstream ss;// Creamos un flujo de string para formatear
                 ss << std::fixed << std::setprecision(2) << distSq;
                 // Ahora construimos el mensaje usando ss.str()
-                string mensaje = "Dist: " + std::to_string(xActual) + ", "+std::to_string((yActual))+" | " + std::to_string(xRef)+", "+std::to_string((yRef)) + " = " + ss.str() + "\n";
+                string mensaje = "Dist: [" + std::to_string(xActual) + ", "+std::to_string((yActual))+"] - [" + std::to_string(xRef)+", "+std::to_string((yRef)) + "] = " + ss.str() + "\n";
                 log(mensaje, out);
             }
             if (distSq < minDistanciaSq) {
@@ -142,16 +142,21 @@ void Algoritmo::max_min_ini(wxTextCtrl* out) {
             string resultado = ss.str();
             log("Umbral: " + resultado + '\n',out);
             log("Matriz cargada: " + to_string(matrizDatos.size()) + " filas x " + to_string(matrizDatos[0].size()) + " columnas.\n",out);
-            log("Seleccionando primer grupo #"+std::to_string(n) + ": " + logM(n) + '\n',out);
+            log("Generando clase 1 #"+std::to_string(n) + ": " + logM(n) + '\n',out);
             int lejano = obtenerMasLejano(n, out); //calculamos el n más lejano de la primera clase para obtener la segunda.
             listaIndices[lejano] = ++num_clases; //es la segunda clase.
-            log("Seleccionando segundo grupo #"+std::to_string(lejano) + ": " + logM(lejano) + '\n',out);
+            log("Generando clase 2 #"+std::to_string(lejano) + ": " + logM(lejano) + '\n',out);
             //ya tenemos los casos minimos, toca generar el resto de clases
             matrizDistancias.assign(matrizDatos.size(), vector<float>()); //inicializamos las distancias
+
             while (dist_mayor > umbral && limite < 100) { //si llegamos al umbral o me canso de esperar...
                 max_min(out);
                 ++limite;
             }
+            //ya tenemos las clases, ahora toca asignar el resto de elementos a las clases generadas.
+            // if (verbo && out) log("--- Asignando elementos restantes ---\n", out);
+            realizarClasificacion(out);
+            log("Clasificación finalizada.\n", out);
         }
     }
 }
@@ -179,6 +184,11 @@ void Algoritmo::max_min(wxTextCtrl *out) {
         double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[ultimoCentro][0], 2) +
                         pow(matrizDatos[i][1] - matrizDatos[ultimoCentro][1], 2));
 
+        stringstream ss2;
+        ss2 << std::fixed << std::setprecision(2) << d;
+        string res2 = ss2.str();
+
+        if (verbo && out) log("Dist: "+ logM(i) + " - "+ logM(ultimoCentro) +" = "+ res2 + "\n",out);
         matrizDistancias[i].push_back(static_cast<float>(d));// Guardamos en la matriz de distancias
     }
     // Buscar el siguiente candidato
@@ -199,49 +209,41 @@ void Algoritmo::max_min(wxTextCtrl *out) {
         num_clases++;
         listaIndices[indiceCandidato] = num_clases;
 
-        log("Generando clase #" + to_string(num_clases+1) + " : " + std::to_string(matrizDatos[indiceCandidato][0]) +
-             ", " + std::to_string(matrizDatos[indiceCandidato][1]) + '\n', out);
+        log("Generando clase " + to_string(num_clases + 1) + " #" + std::to_string(indiceCandidato) + ": [" +
+            std::to_string(matrizDatos[indiceCandidato][0]) +
+            " ," + std::to_string(matrizDatos[indiceCandidato][1]) + "]\n", out);
 
         dist_mayor = maxDeLasMinimas; // Actualizamos para la condición del while
     } else {
         log("No se encontraron más centros que superen el umbral.\n", out);
         dist_mayor = 0; // Rompemos el bucle while
     }
-    //ya tenemos las clases, ahora toca asignar el resto de elementos a las clases generadas.
-    realizarClasificacion(out);
-    log("Clasificación finalizada.\n", out);
 }
 
-
+//asigna a las clases generadas el resto de elementos
 void Algoritmo::realizarClasificacion(wxTextCtrl *out) {
+    log("Clasificando elementos restantes...\n",out);
     while (dist_mayor > umbral && limite < 20) {
         max_min(out);
         ++limite;
     }
-
-    // --- INICIO FASE 2: CLASIFICACIÓN DE ELEMENTOS RESTANTES ---
-    if (verbo && out) log("--- Asignando elementos restantes ---\n", out);
 
     for (int i = 0; i < (int)matrizDatos.size(); ++i) {
         if (listaIndices[i] == -1) { // Si el elemento no es un centro
 
             float distMinima = 999999.0;
             int claseAsignada = -1;
-
             // Buscar cuál de los centros existentes le queda más cerca
             for (int j = 0; j < (int)matrizDatos.size(); ++j) {
                 if (listaIndices[j] != -1) { // Solo comparamos contra los que SÍ son centros
-
                     double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[j][0], 2) +
                                     pow(matrizDatos[i][1] - matrizDatos[j][1], 2));
-
                     if (d < distMinima) {
                         distMinima = d;
                         claseAsignada = listaIndices[j]; // Tomamos la clase de ese centro
                     }
                 }
             }
-
             // Le asignamos la clase ganadora
             listaIndices[i] = claseAsignada;
             if (verbo && out) {
