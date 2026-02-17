@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <random>
+#include "io.h"
 using namespace std;
 
 MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxSize(1280, 720)) {
@@ -43,7 +43,7 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
 
         // 1. Llamamos al algoritmo y lo imprimimos en el visualizador
         //procesar entrada también guarda los datos en un string.
-        string nombreParaMostrar = Algoritmo::procesarEntrada(path);
+        string nombreParaMostrar = io::procesarEntrada(path);
         filesystem::path p(path);
         ifstream archivo(p);
         stringstream buffer;
@@ -62,7 +62,7 @@ void MyFrame::OnCalculaClick(wxCommandEvent& event) {
     SetStatusText("Cálculo ejecutado desde Algoritmo.");
     log("===================================\n",consola);
     // 2. Llamamos al algoritmo y le pasamos nuestra consola
-    Algoritmo::ejecutarCalculo(consola);
+    Algoritmo::max_min_ini(consola);
     canvas->Refresh();
 }
 

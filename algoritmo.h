@@ -15,8 +15,7 @@ public:
     static double dist_mayor;
     static std::vector<std::vector<float>> matrizDistancias;
 
-    static std::string procesarEntrada(const std::string& path, wxTextCtrl* salida = nullptr);
-    static void ejecutarCalculo(wxTextCtrl *out);
+    static void max_min_ini(wxTextCtrl *out);
     static void realizarClasificacion(wxTextCtrl *out);
 
     static std::string logM(int pos);
