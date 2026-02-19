@@ -1,5 +1,5 @@
 @comentario
-@umbral: 3.5
+@umbral: 0.3
 2,3
 7,9
 1,2

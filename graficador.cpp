@@ -98,7 +98,7 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
     double escalaX = anchoGrafico / (maxX - minX);
     double escalaY = altoGrafico / (maxY - minY);
 
-    // --- FUNCIONES LAMBDA DE TRADUCCIÓN ESCALAMIENTO---
+    // --- FUNCIONES LAMBDA DE ESCALAMIENTO ---
     // Estas funciones convierten cualquier valor matemático (X,Y) a píxeles de pantalla
     auto toScreenX = [&](double x) { return margin + (x - minX) * escalaX; };
     auto toScreenY = [&](double y) { return (h - margin) - (y - minY) * escalaY; };

@@ -131,32 +131,55 @@ int Algoritmo::obtenerMasCercano(int indiceReferencia,wxTextCtrl *out) {
 //llama a la función max-min para generar las clases n:3+ hasta que se llegue al umbral.
 void Algoritmo::max_min_ini(wxTextCtrl* out) {
     if (out) {
-        std::fill(listaIndices.begin(), listaIndices.end(), -1); //reinicio mi vector de clases.
-        num_clases = 0; // Reiniciamos el contador de grupos encontrados
-        int n = obtenerIndiceAleatorio(); //obtenemos el índice de la primera clase
-        listaIndices[n]=0; //el elemento n es la clase 0
+        std::fill(listaIndices.begin(), listaIndices.end(), -1);
+        num_clases = 0;
 
-        if (!matrizDatos.empty()) { //formateo del cout para dos decimales
+        // 1. Primer Centro
+        int n = obtenerIndiceAleatorio();
+        listaIndices[n] = 0;
+
+        if (!matrizDatos.empty()) {
             stringstream ss;
             ss << std::fixed << std::setprecision(2) << umbral;
-            string resultado = ss.str();
-            log("Umbral: " + resultado + '\n',out);
-            log("Matriz cargada: " + to_string(matrizDatos.size()) + " filas x " + to_string(matrizDatos[0].size()) + " columnas.\n",out);
-            log("Generando clase 1 #"+std::to_string(n) + ": " + logM(n) + '\n',out);
-            int lejano = obtenerMasLejano(n, out); //calculamos el n más lejano de la primera clase para obtener la segunda.
-            listaIndices[lejano] = ++num_clases; //es la segunda clase.
-            log("Generando clase 2 #"+std::to_string(lejano) + ": " + logM(lejano) + '\n',out);
-            //ya tenemos los casos minimos, toca generar el resto de clases
-            matrizDistancias.assign(matrizDatos.size(), vector<float>()); //inicializamos las distancias
+            log("Umbral factor: " + ss.str() + '\n', out);
+            log("Matriz: " + to_string(matrizDatos.size()) + " filas.\n", out);
+            log("Centro 1 (Clase 0) en #" + std::to_string(n) + ": " + logM(n) + '\n', out);
 
-            while (dist_mayor > umbral && limite < 100) { //si llegamos al umbral o me canso de esperar...
+            // 2. Segundo Centro
+            int lejano = obtenerMasLejano(n, out);
+            listaIndices[lejano] = ++num_clases; // Clase 1
+            log("Centro 2 (Clase 1) en #" + std::to_string(lejano) + ": " + logM(lejano) + '\n', out);
+
+            // 3. CRUCIAL: Calcular la distancia inicial para el umbral
+            dist_mayor_inicial = sqrt(pow(matrizDatos[n][0] - matrizDatos[lejano][0], 2) +
+                                      pow(matrizDatos[n][1] - matrizDatos[lejano][1], 2));
+
+            log("Distancia Inicial (C1-C2): " + std::to_string(dist_mayor_inicial) + "\n", out);
+
+            // 4. CRUCIAL: Inicializar matrizDistancias con LOS DOS primeros centros
+            matrizDistancias.assign(matrizDatos.size(), vector<float>());
+
+            // Llenar distancias hacia Centro 1 (n)
+            for(int i=0; i < (int)matrizDatos.size(); ++i) {
+                double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[n][0], 2) + pow(matrizDatos[i][1] - matrizDatos[n][1], 2));
+                matrizDistancias[i].push_back((float)d);
+            }
+            // Llenar distancias hacia Centro 2 (lejano)
+            for(int i=0; i < (int)matrizDatos.size(); ++i) {
+                double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[lejano][0], 2) + pow(matrizDatos[i][1] - matrizDatos[lejano][1], 2));
+                matrizDistancias[i].push_back((float)d);
+            }
+
+            // Configuramos dist_mayor para que entre al bucle
+            dist_mayor = dist_mayor_inicial;
+
+            // 5. Bucle para encontrar resto de centros
+            while (dist_mayor > (Algoritmo::umbral * dist_mayor_inicial) && limite < 100) {
                 max_min(out);
                 ++limite;
             }
-            //ya tenemos las clases, ahora toca asignar el resto de elementos a las clases generadas.
-            // if (verbo && out) log("--- Asignando elementos restantes ---\n", out);
+
             realizarClasificacion(out);
-            log("Clasificación finalizada.\n", out);
         }
     }
 }
@@ -165,90 +188,77 @@ void Algoritmo::max_min_ini(wxTextCtrl* out) {
 //recordemos que listaIndices contiene las clases
 //y que matrizDistancias las distancias entre los elementos
 void Algoritmo::max_min(wxTextCtrl *out) {
-    int ultimoCentro = -1;
-
-    // Buscamos cuál fue el último centro/clase agregado (el que tiene el índice de clase más alto)
-    for(int i = 0; i < (int)listaIndices.size(); ++i) {
-        if(listaIndices[i] == num_clases) {
-            ultimoCentro = i;
-            break;
-        }
-    }
-
     double maxDeLasMinimas = -1.0;
     int indiceCandidato = -1;
 
-    // Actualizar matriz de distancias con el nuevo centro
-    for (int i = 0; i < (int)matrizDatos.size(); ++i) {
-        // Calculamos distancia del punto 'i' al 'ultimoCentro'
-        double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[ultimoCentro][0], 2) +
-                        pow(matrizDatos[i][1] - matrizDatos[ultimoCentro][1], 2));
+    // A. Buscar el siguiente candidato (MAX-MIN)
+    // Nota: Ya no actualizamos distancias al inicio, eso se hace al FINAL de haber encontrado un centro válido.
 
-        stringstream ss2;
-        ss2 << std::fixed << std::setprecision(2) << d;
-        string res2 = ss2.str();
-
-        if (verbo && out) log("Dist: "+ logM(i) + " - "+ logM(ultimoCentro) +" = "+ res2 + "\n",out);
-        matrizDistancias[i].push_back(static_cast<float>(d));// Guardamos en la matriz de distancias
-    }
-    // Buscar el siguiente candidato
     for (int i = 0; i < (int)matrizDatos.size(); ++i) {
-        if (listaIndices[i] == -1) { //Si no es un centro...
-            // MIN: Buscamos la distancia más corta del punto 'i' a sus centros conocidos
-            // Esto está almacenado en matrizDistancias[i]
+        if (listaIndices[i] == -1) { // Si no es un centro
+            // MIN: Distancia al centro más cercano
             float distMinimaACentro = *std::min_element(matrizDistancias[i].begin(), matrizDistancias[i].end());
-            // MAX: Queremos el punto que tenga la mayor de esas distancias mínimas
+
+            // MAX: El punto más lejano de todos los cercanos
             if (distMinimaACentro > maxDeLasMinimas) {
                 maxDeLasMinimas = distMinimaACentro;
                 indiceCandidato = i;
             }
         }
     }
-    // Validamos contra el umbral
-    if (indiceCandidato != -1 && maxDeLasMinimas > (Algoritmo::umbral * dist_mayor_inicial)) {
+
+    // B. Validar contra el umbral REAL
+    // El criterio es: Si la distancia es > (Factor * DistanciaInicial)
+    double umbralReal = Algoritmo::umbral * dist_mayor_inicial;
+
+    if (indiceCandidato != -1 && maxDeLasMinimas > umbralReal) {
         num_clases++;
         listaIndices[indiceCandidato] = num_clases;
 
-        log("Generando clase " + to_string(num_clases + 1) + " #" + std::to_string(indiceCandidato) + ": [" +
-            std::to_string(matrizDatos[indiceCandidato][0]) +
-            " ," + std::to_string(matrizDatos[indiceCandidato][1]) + "]\n", out);
+        log("Nuevo Centro (Clase " + to_string(num_clases) + ") en #" + std::to_string(indiceCandidato) + ": " + logM(indiceCandidato) + "\n", out);
 
-        dist_mayor = maxDeLasMinimas; // Actualizamos para la condición del while
+        // C. CRUCIAL: Ahora que aceptamos el centro, actualizamos la matriz de distancias
+        for (int i = 0; i < (int)matrizDatos.size(); ++i) {
+            double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[indiceCandidato][0], 2) +
+                            pow(matrizDatos[i][1] - matrizDatos[indiceCandidato][1], 2));
+            matrizDistancias[i].push_back((float)d);
+        }
+
+        dist_mayor = maxDeLasMinimas; // Actualizamos para el while
     } else {
-        log("No se encontraron más centros que superen el umbral.\n", out);
+        log("Fin de búsqueda de centros. Max distancia restante (" + std::to_string(maxDeLasMinimas) + ") no supera umbral (" + std::to_string(umbralReal) + ").\n", out);
         dist_mayor = 0; // Rompemos el bucle while
     }
 }
 
 //asigna a las clases generadas el resto de elementos
 void Algoritmo::realizarClasificacion(wxTextCtrl *out) {
-    log("Clasificando elementos restantes...\n",out);
-    while (dist_mayor > umbral && limite < 20) {
-        max_min(out);
-        ++limite;
-    }
+    if(verbo && out) log("--- Clasificando elementos restantes ---\n", out);
+
+    // ELIMINADO EL BUCLE WHILE QUE LLAMABA A MAX_MIN
 
     for (int i = 0; i < (int)matrizDatos.size(); ++i) {
-        if (listaIndices[i] == -1) { // Si el elemento no es un centro
+        if (listaIndices[i] == -1) { // Solo clasificamos los que no son centros
 
             float distMinima = 999999.0;
             int claseAsignada = -1;
-            // Buscar cuál de los centros existentes le queda más cerca
+
+            // Buscar centro más cercano
             for (int j = 0; j < (int)matrizDatos.size(); ++j) {
-                if (listaIndices[j] != -1) { // Solo comparamos contra los que SÍ son centros
+                if (listaIndices[j] != -1) { // Comparamos contra centros
                     double d = sqrt(pow(matrizDatos[i][0] - matrizDatos[j][0], 2) +
                                     pow(matrizDatos[i][1] - matrizDatos[j][1], 2));
                     if (d < distMinima) {
                         distMinima = d;
-                        claseAsignada = listaIndices[j]; // Tomamos la clase de ese centro
+                        claseAsignada = listaIndices[j];
                     }
                 }
             }
-            // Le asignamos la clase ganadora
+
             listaIndices[i] = claseAsignada;
+            // +1 para que coincida con tu log de "Clase 1, Clase 2..." visualmente
             if (verbo && out) {
-                log("Elemento [" + to_string(matrizDatos[i][0]) + ", " + to_string(matrizDatos[i][1]) +
-                    "] asignado a clase #" + to_string(claseAsignada + 1) + "\n", out);
+                log("Elemento " + logM(i) + " -> Clase " + to_string(claseAsignada) + "\n", out);
             }
         }
     }
