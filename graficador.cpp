@@ -40,10 +40,79 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
 }
 
 void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
-    // --- AQUÍ VA TODO TU CÓDIGO ORIGINAL 2D ---
-    // (Pega aquí exactamente lo que tenías antes dentro de OnPaint,
-    // desde "int margin = 50;" hasta el final de la leyenda de grupos).
-}
+    int margin = 50;
+    int rightMargin = 150;
+
+    double anchoGrafico = w - margin - rightMargin;
+    double altoGrafico = h - 2.0 * margin;
+
+    // --- PALETA DE COLORES ---
+    std::vector<wxColour> paleta = {
+        wxColour(150, 150, 150), wxColour(215, 50, 50), wxColour(50, 120, 215),
+        wxColour(50, 200, 50), wxColour(255, 128, 0), wxColour(128, 0, 128),
+        wxColour(255, 105, 180), wxColour(0, 255, 255), wxColour(255, 255, 0),
+        wxColour(128, 0, 255), wxColour(0, 255, 127)
+    };
+
+    // --- ENCONTRAR MÁXIMOS Y MÍNIMOS REALES ---
+    double minXReal = 0.0, maxXReal = 0.0;
+    double minYReal = 0.0, maxYReal = 0.0;
+
+    if (!Algoritmo::matrizDatos.empty()) {
+        // Aseguramos que haya al menos 1 dimensión para X
+        if (Algoritmo::matrizDatos[0].size() > 0) {
+            minXReal = maxXReal = Algoritmo::matrizDatos[0][0];
+        }
+        // Aseguramos que haya al menos 2 dimensiones para Y
+        if (Algoritmo::matrizDatos[0].size() > 1) {
+            minYReal = maxYReal = Algoritmo::matrizDatos[0][1];
+        }
+
+        for (const auto& fila : Algoritmo::matrizDatos) {
+            if (fila.size() > 0) {
+                if (fila[0] < minXReal) minXReal = fila[0];
+                if (fila[0] > maxXReal) maxXReal = fila[0];
+            }
+            if (fila.size() > 1) {
+                if (fila[1] < minYReal) minYReal = fila[1];
+                if (fila[1] > maxYReal) maxYReal = fila[1];
+            }
+        }
+    }
+
+    if (minXReal > 0) minXReal = 0;
+    if (maxXReal < 0) maxXReal = 0;
+    if (minYReal > 0) minYReal = 0;
+    if (maxYReal < 0) maxYReal = 0;
+
+    int divisiones = 10;
+    double rangoXReal = maxXReal - minXReal;
+    double rangoYReal = maxYReal - minYReal;
+    if (rangoXReal == 0) rangoXReal = 10; 
+    if (rangoYReal == 0) rangoYReal = 10;
+
+    double limitMinX = minXReal - (rangoXReal * 0.1);
+    double limitMaxX = maxXReal + (rangoXReal * 0.1);
+    double limitMinY = minYReal - (rangoYReal * 0.1);
+    double limitMaxY = maxYReal + (rangoYReal * 0.1);
+
+    int pasoXMat = std::max(1, (int)std::ceil((limitMaxX - limitMinX) / divisiones));
+    int pasoYMat = std::max(1, (int)std::ceil((limitMaxY - limitMinY) / divisiones));
+
+    int minX = std::floor(limitMinX / pasoXMat) * pasoXMat;
+    int maxX = minX + (pasoXMat * divisiones);
+    int minY = std::floor(limitMinY / pasoYMat) * pasoYMat;
+    int maxY = minY + (pasoYMat * divisiones);
+
+    double escalaX = anchoGrafico / (maxX - minX);
+    double escalaY = altoGrafico / (maxY - minY);
+
+    auto toScreenX = [&](double x) { return margin + (x - minX) * escalaX; };
+    auto toScreenY = [&](double y) { return (h - margin) - (y - minY) * escalaY; };
+
+    wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
+    fuente.SetPointSize(12);
+    gc->SetFont(fuente, wxColour(80, 80, 8
 
 void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     int margin = 50;
