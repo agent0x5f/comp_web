@@ -121,7 +121,7 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     
     // Centro del área de dibujo
     double centroX = (w - rightMargin) / 2.0;
-    double centroY = h / 2.0 + 50; // Desplazado un poco abajo para centrar visualmente
+    double centroY = h / 2.0 + 50;
 
     std::vector<wxColour> paleta = {
         wxColour(150, 150, 150), wxColour(215, 50, 50), wxColour(50, 120, 215),
@@ -140,57 +140,97 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
         }
     }
     
-    // Escala general para que todo quepa en la pantalla
-    double escala = std::min(centroX - margin, centroY - margin) / (maxVal * 1.2);
+    // 2. Cálculo de la Cuadrícula y Escala
+    int divisiones = 5; // Menos divisiones en 3D para no saturar la vista
+    int pasoMat = std::max(1, (int)std::ceil(maxVal / divisiones));
+    int maxGrid = pasoMat * divisiones; // El límite visual de nuestras paredes/piso
 
-    // 2. Matemáticas de Proyección Ortogonal (Isométrica)
-    // Ángulos de rotación de la cámara
-    double angleX = 0.5;  // Inclinación hacia abajo (Pitch)
-    double angleY = -0.6; // Rotación lateral (Yaw)
+    // Ajustamos la escala para que encaje la cuadrícula completa
+    double escala = std::min(centroX - margin, centroY - margin) / (maxGrid * 1.2);
 
-    // Función Lambda que convierte coordenadas 3D a píxeles 2D de pantalla
+    // 3. Matemáticas de Proyección
+    double angleYaw = 0.5;   // Rota el plano XY
+    double anglePitch = 0.6; // Inclina la cámara para ver la altura Z
+
     auto proyectar = [&](double x, double y, double z, double& px, double& py) {
-        // Rotación en eje Y
-        double x1 = x * cos(angleY) - z * sin(angleY);
-        double z1 = x * sin(angleY) + z * cos(angleY);
-        // Rotación en eje X
-        double y1 = y * cos(angleX) - z1 * sin(angleX);
-        
-        // Asignación final escalada y centrada (Y crece hacia abajo en la pantalla, por eso la resta)
+        double x1 = x * cos(angleYaw) - y * sin(angleYaw);
+        double y1 = x * sin(angleYaw) + y * cos(angleYaw);
+        double yp = y1 * cos(anglePitch) - z * sin(anglePitch);
         px = centroX + (x1 * escala);
-        py = centroY - (y1 * escala);
+        py = centroY + (yp * escala);
     };
 
-    wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
-    fuente.SetPointSize(10);
-    gc->SetFont(fuente, wxColour(80, 80, 80));
+    wxFont fuenteTextos = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
+    fuenteTextos.SetPointSize(9);
+    gc->SetFont(fuenteTextos, wxColour(100, 100, 100));
 
-    // 3. Dibujar los 3 Ejes de Referencia (X=Rojo, Y=Verde, Z=Azul)
+    // --- DIBUJAR CUADRÍCULA 3D (Piso y Paredes) ---
+    gc->SetPen(wxPen(wxColour(230, 230, 230), 1)); // Gris muy claro
+    double px1, py1, px2, py2;
+
+    for (int i = 0; i <= divisiones; ++i) {
+        int val = i * pasoMat;
+
+        // --- PISO (Plano XY) ---
+        // Líneas paralelas a Y
+        proyectar(val, 0, 0, px1, py1);
+        proyectar(val, maxGrid, 0, px2, py2);
+        gc->StrokeLine(px1, py1, px2, py2);
+        if (i > 0) gc->DrawText(wxString::Format("%d", val), px1, py1 + 2); // Textos eje X
+
+        // Líneas paralelas a X
+        proyectar(0, val, 0, px1, py1);
+        proyectar(maxGrid, val, 0, px2, py2);
+        gc->StrokeLine(px1, py1, px2, py2);
+        if (i > 0) gc->DrawText(wxString::Format("%d", val), px1 - 15, py1 + 2); // Textos eje Y
+
+        // --- PAREDES (Planos XZ y YZ) ---
+        if (i > 0) { // No redibujar los ejes 0,0,0
+            // Líneas horizontales de altura (Z)
+            proyectar(0, 0, val, px1, py1);
+            proyectar(maxGrid, 0, val, px2, py2); // En pared X
+            gc->StrokeLine(px1, py1, px2, py2);
+            proyectar(0, maxGrid, val, px2, py2); // En pared Y
+            gc->StrokeLine(px1, py1, px2, py2);
+            gc->DrawText(wxString::Format("%d", val), px1 - 20, py1 - 8); // Textos eje Z
+
+            // Líneas verticales (Altura en X)
+            proyectar(val, 0, 0, px1, py1);
+            proyectar(val, 0, maxGrid, px2, py2);
+            gc->StrokeLine(px1, py1, px2, py2);
+
+            // Líneas verticales (Altura en Y)
+            proyectar(0, val, 0, px1, py1);
+            proyectar(0, val, maxGrid, px2, py2);
+            gc->StrokeLine(px1, py1, px2, py2);
+        }
+    }
+
+    // --- 4. Dibujar los 3 Ejes de Referencia Principales ---
     double origenX, origenY, finX, finY;
     proyectar(0, 0, 0, origenX, origenY);
 
-    gc->SetPen(wxPen(wxColour(255, 100, 100), 2)); // Eje X
-    proyectar(maxVal + 1, 0, 0, finX, finY);
+    gc->SetPen(wxPen(wxColour(255, 80, 80), 3)); // Eje X (Rojo)
+    proyectar(maxGrid + (pasoMat*0.5), 0, 0, finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
     gc->DrawText("X", finX + 5, finY);
 
-    gc->SetPen(wxPen(wxColour(100, 200, 100), 2)); // Eje Y (Vertical)
-    proyectar(0, maxVal + 1, 0, finX, finY);
+    gc->SetPen(wxPen(wxColour(80, 200, 80), 3)); // Eje Y (Verde)
+    proyectar(0, maxGrid + (pasoMat*0.5), 0, finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
-    gc->DrawText("Y", finX, finY - 15);
+    gc->DrawText("Y", finX, finY + 5);
 
-    gc->SetPen(wxPen(wxColour(100, 100, 255), 2)); // Eje Z (Profundidad)
-    proyectar(0, 0, maxVal + 1, finX, finY);
+    gc->SetPen(wxPen(wxColour(80, 80, 255), 3)); // Eje Z (Azul)
+    proyectar(0, 0, maxGrid + (pasoMat*0.5), finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
-    gc->DrawText("Z", finX - 15, finY);
+    gc->DrawText("Z", finX - 15, finY - 15);
 
-    // 4. Dibujar los puntos del dataset
+    // --- 5. Dibujar los puntos del dataset ---
     if (!Algoritmo::matrizDatos.empty()) {
-        gc->SetPen(wxPen(wxColour(200, 200, 200), 1, wxPENSTYLE_DOT)); // Lápiz para la línea al piso
+        gc->SetPen(wxPen(wxColour(180, 180, 180), 1, wxPENSTYLE_DOT)); // Lápiz para la línea al piso
         double radioPunto = 5.0;
 
         for (size_t i = 0; i < Algoritmo::matrizDatos.size(); ++i) {
-            // Extraer hasta 3 dimensiones (si tiene menos, rellena con 0)
             double xMat = Algoritmo::matrizDatos[i].size() > 0 ? Algoritmo::matrizDatos[i][0] : 0;
             double yMat = Algoritmo::matrizDatos[i].size() > 1 ? Algoritmo::matrizDatos[i][1] : 0;
             double zMat = Algoritmo::matrizDatos[i].size() > 2 ? Algoritmo::matrizDatos[i][2] : 0;
@@ -200,9 +240,9 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
 
             double px, py, pisoX, pisoY;
             proyectar(xMat, yMat, zMat, px, py);
-            proyectar(xMat, 0, zMat, pisoX, pisoY); // Proyección de la sombra en el plano XZ
+            proyectar(xMat, yMat, 0, pisoX, pisoY); // Sombra en Z=0
 
-            // Dibujar línea de profundidad (hacia el plano base) para efecto 3D
+            // Dibujar línea de anclaje
             gc->StrokeLine(pisoX, pisoY, px, py);
 
             // Dibujar el nodo
@@ -212,15 +252,17 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
         }
     }
 
-    // 5. Dibujar la Leyenda (Misma lógica que en 2D)
+    // --- 6. Dibujar la Leyenda ---
     int maxClaseEncontrada = -1;
     for (int c : Algoritmo::listaIndices) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
     }
 
+    wxFont fuenteLeyenda = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
+    fuenteLeyenda.SetPointSize(10);
     int leyendaX = w - rightMargin + 20;
     int leyendaY = margin;
-    gc->SetFont(fuente, *wxBLACK);
+    gc->SetFont(fuenteLeyenda, *wxBLACK);
     gc->DrawText("Grupos (Vista 3D):", leyendaX, leyendaY);
     leyendaY += 25;
 
@@ -237,3 +279,4 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
         leyendaY += 22;
     }
 }
+
