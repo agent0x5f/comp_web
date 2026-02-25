@@ -12,6 +12,7 @@ public:
     void OnEscritura(wxCommandEvent &event);
     static void log(std::string msg, wxTextCtrl *out);
     void OnCheckClick(wxCommandEvent& event);
+    void OnlimpiaClick(wxCommandEvent& event);
 
 private:
     wxButton* cargar_archivo; //explorador del sistema
@@ -23,6 +24,7 @@ private:
     MyGraphCanvas *canvas;
     wxButton* exporta; //imprime el csv con las clases resultantes
     wxCheckBox * checkbox1;
+    wxButton* limpia;//limpia la consola
 };
 
 #endif

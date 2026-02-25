@@ -23,6 +23,9 @@ public:
     static int obtenerMasLejano(int indiceReferencia, wxTextCtrl *out);
     static void max_min(wxTextCtrl *out);
     static int obtenerMasCercano(int indiceReferencia,wxTextCtrl *out);
+
+    static std::string a2decimal(std::string text);
+    static std::string a2decimal(double number);
 };
 
 #endif

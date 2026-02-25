@@ -27,7 +27,8 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxS
     consola = new wxTextCtrl(panel,wxID_ANY,"", wxPoint(220,50), wxSize(300,600),wxTE_READONLY | wxTE_MULTILINE | wxBORDER_SIMPLE);
     canvas = new MyGraphCanvas(panel, wxPoint(520, 50), wxSize(750, 600));
     exporta = new wxButton(panel, wxID_ANY, "Exporta", wxPoint(1080, 10));
-
+    limpia = new wxButton(panel, wxID_ANY, "Limpia", wxPoint(520, 10));
+    limpia->Bind(wxEVT_BUTTON, &MyFrame::OnlimpiaClick, this);
     wxFrameBase::CreateStatusBar();
 }
 
@@ -66,6 +67,11 @@ void MyFrame::OnCalculaClick(wxCommandEvent& event) {
     canvas->Refresh();
 }
 
+
+void MyFrame::OnlimpiaClick(wxCommandEvent &event){
+    consola->Clear();
+}
+
 void MyFrame::OnEscritura(wxCommandEvent& event){
     // Obtenemos el texto del textbox que disparó el evento
     wxString texto = event.GetString();
@@ -87,4 +93,5 @@ void MyFrame::log(string msg, wxTextCtrl *out) {
 void MyFrame::OnCheckClick(wxCommandEvent& event) {
     Algoritmo::verbo = event.IsChecked();
 }
+
 
