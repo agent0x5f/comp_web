@@ -26,6 +26,8 @@ public:
 
     static std::string a2decimal(std::string text);
     static std::string a2decimal(double number);
+
+    static double calcularDistancia(const std::vector<int>& p1, const std::vector<int>& p2);
 };
 
 #endif
