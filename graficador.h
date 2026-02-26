@@ -20,6 +20,16 @@ private:
     // Separamos la lógica para mayor orden
     void Dibujar2D(wxGraphicsContext* gc, int w, int h);
     void Dibujar3D(wxGraphicsContext* gc, int w, int h);
+    // Variables para la rotación 3D
+    double angleYaw = 0.5;   // Ángulo inicial
+    double anglePitch = 0.6; // Ángulo inicial
+    wxPoint lastMousePos;
+    bool isDragging = false;
+
+    // Funciones para los eventos del ratón
+    void OnMouseLeftDown(wxMouseEvent& event);
+    void OnMouseLeftUp(wxMouseEvent& event);
+    void OnMouseMotion(wxMouseEvent& event);
 };
 
 #endif
