@@ -11,6 +11,9 @@ MyGraphCanvas::MyGraphCanvas(wxWindow* parent, wxPoint pos, wxSize size)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     Bind(wxEVT_PAINT, &MyGraphCanvas::OnPaint, this);
+    Bind(wxEVT_LEFT_DOWN, &MyGraphCanvas::OnMouseLeftDown, this);
+    Bind(wxEVT_LEFT_UP, &MyGraphCanvas::OnMouseLeftUp, this);
+    Bind(wxEVT_MOTION, &MyGraphCanvas::OnMouseMotion, this);
 }
 
 void MyGraphCanvas::SetModo3D(bool activar3D) {
@@ -35,6 +38,42 @@ void MyGraphCanvas::OnPaint(wxPaintEvent& event) {
     }
 
     delete gc;
+}
+
+void MyGraphCanvas::OnMouseLeftDown(wxMouseEvent& event) {
+    if (modo3D) {
+        isDragging = true;
+        lastMousePos = event.GetPosition(); // Guardamos dónde empezó el clic
+    }
+}
+
+void MyGraphCanvas::OnMouseLeftUp(wxMouseEvent& event) {
+    isDragging = false; // Dejamos de rotar al soltar el clic
+}
+
+void MyGraphCanvas::OnMouseMotion(wxMouseEvent& event) {
+    if (isDragging && modo3D) {
+        wxPoint currentPos = event.GetPosition();
+        
+        // Calculamos cuánto se movió el ratón
+        double deltaX = currentPos.x - lastMousePos.x;
+        double deltaY = currentPos.y - lastMousePos.y;
+
+        // Sensibilidad del giro (ajusta este valor si gira muy rápido o lento)
+        double sensibilidad = 0.01; 
+
+        // Modificamos los ángulos (deltaX mueve Yaw, deltaY mueve Pitch)
+        angleYaw += deltaX * sensibilidad;
+        anglePitch += deltaY * sensibilidad;
+
+        // Opcional: Limitar el Pitch para que la gráfica no se ponga "de cabeza"
+        if (anglePitch > 1.5) anglePitch = 1.5;
+        if (anglePitch < -1.5) anglePitch = -1.5;
+
+        // Actualizamos la posición anterior y mandamos a redibujar
+        lastMousePos = currentPos;
+        Refresh(); // Esto llama a OnPaint automáticamente
+    }
 }
 
 void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
@@ -148,8 +187,8 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     double escala = std::min(centroX - margin, centroY - margin) / (maxGrid * 1.2);
 
     // 3. Matemáticas de Proyección
-    double angleYaw = 0.5;   // Rota el plano XY
-    double anglePitch = 0.6; // Inclina la cámara para ver la altura Z
+   // double angleYaw = 0.5;   // Rota el plano XY
+  //  double anglePitch = 0.6; // Inclina la cámara para ver la altura Z
 
     auto proyectar = [&](double x, double y, double z, double& px, double& py) {
         double x1 = x * cos(angleYaw) - y * sin(angleYaw);
