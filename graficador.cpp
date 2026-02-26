@@ -63,8 +63,8 @@ void MyGraphCanvas::OnMouseMotion(wxMouseEvent& event) {
         double sensibilidad = 0.01; 
 
         // Modificamos los ángulos (deltaX mueve Yaw, deltaY mueve Pitch)
-        angleYaw += deltaX * sensibilidad;
-        anglePitch += deltaY * sensibilidad;
+        angleYaw -= deltaX * sensibilidad;
+        anglePitch -= deltaY * sensibilidad;
 
         // Opcional: Limitar el Pitch para que la gráfica no se ponga "de cabeza"
         if (anglePitch > 1.5) anglePitch = 1.5;
@@ -160,6 +160,7 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
 
     int leyendaX = w - rightMargin + 20;
     int leyendaY = margin;
+    wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
     gc->SetFont(fuente, *wxBLACK);
     gc->DrawText("Grupos Encontrados:", leyendaX, leyendaY);
     leyendaY += 25;
