@@ -42,7 +42,7 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
     wxUnusedVar(event);
     // Filtramos
     wxFileDialog openFileDialog(this, "Selecciona un archivo", "", "",
-                       R"(*.txt;*.csv;)",
+                       R"(*.txt;*.csv;*.json;)",
                        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (openFileDialog.ShowModal() == wxID_OK) {
