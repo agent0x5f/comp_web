@@ -28,6 +28,8 @@ set(SOURCE_FILES
         graficador.h
         io.cpp
         io.h
+        chainmap.cpp
+        chainmap.h
 )
 
 # --- 5. CREAR EL EJECUTABLE ---
