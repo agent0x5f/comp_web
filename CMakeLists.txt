@@ -22,8 +22,8 @@ set(SOURCE_FILES
         main.cpp
         graficos.cpp
         graficos.h
-        algoritmo.cpp
-        algoritmo.h
+        maxmin.cpp
+        maxmin.h
         graficador.cpp
         graficador.h
         io.cpp

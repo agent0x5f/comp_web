@@ -1,5 +1,5 @@
 #include "graficos.h"
-#include "algoritmo.h"
+#include "maxmin.h"
 #include "graficador.h"
 #include <wx/wx.h>
 #include <filesystem>
@@ -66,10 +66,10 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
 
 void MyFrame::OnCalculaClick(wxCommandEvent& event) {
     //Feedback visual en la barra de estado
-    SetStatusText("Calculo ejecutado desde Algoritmo.");
+    SetStatusText("Calculo ejecutado desde maxmin.");
     log("===================================\n",consola);
     // 2. Llamamos al algoritmo y le pasamos nuestra consola
-    Algoritmo::max_min_ini(consola);
+    maxmin::max_min_ini(consola);
     canvas->Refresh();
 }
 
@@ -85,8 +85,8 @@ void MyFrame::OnEscritura(wxCommandEvent& event){
     if (!texto.IsEmpty()) {
         int valorTemporal;
         if (texto.ToInt(&valorTemporal)) {
-            // Actualizamos la variable en la clase Algoritmo
-            Algoritmo::seed = (int)valorTemporal;
+            // Actualizamos la variable en la clase maxmin
+            maxmin::seed = (int)valorTemporal;
             log(("Semilla actualizada: "+std::to_string(valorTemporal)+'\n'),consola);
         }
     }
@@ -97,7 +97,7 @@ void MyFrame::log(string msg, wxTextCtrl *out) {
 }
 
 void MyFrame::OnCheckClick(wxCommandEvent& event) {
-    Algoritmo::verbo = event.IsChecked();
+    maxmin::verbo = event.IsChecked();
 }
 
 void MyFrame::OnButton2DClick(wxCommandEvent& event) {

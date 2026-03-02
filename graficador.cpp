@@ -2,7 +2,7 @@
 #include <wx/dcbuffer.h>
 #include <wx/graphics.h>
 #include "graficador.h"
-#include "algoritmo.h"
+#include "maxmin.h"
 #include <algorithm>
 #include <cmath>
 
@@ -87,11 +87,11 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     double minXReal = 0.0, maxXReal = 0.0;
     double minYReal = 0.0, maxYReal = 0.0;
 
-    if (!Algoritmo::matrizDatos.empty()) {
-        if (Algoritmo::matrizDatos[0].size() > 0) minXReal = maxXReal = Algoritmo::matrizDatos[0][0];
-        if (Algoritmo::matrizDatos[0].size() > 1) minYReal = maxYReal = Algoritmo::matrizDatos[0][1];
+    if (!maxmin::matrizDatos.empty()) {
+        if (maxmin::matrizDatos[0].size() > 0) minXReal = maxXReal = maxmin::matrizDatos[0][0];
+        if (maxmin::matrizDatos[0].size() > 1) minYReal = maxYReal = maxmin::matrizDatos[0][1];
 
-        for (const auto& fila : Algoritmo::matrizDatos) {
+        for (const auto& fila : maxmin::matrizDatos) {
             if (fila.size() > 0) {
                 if (fila[0] < minXReal) minXReal = fila[0];
                 if (fila[0] > maxXReal) maxXReal = fila[0];
@@ -139,12 +139,12 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     }
 
     // --- SECCIÓN DE DIBUJO DE PUNTOS Y CENTROS ---
-    for (size_t i = 0; i < Algoritmo::matrizDatos.size(); ++i) {
-        if (Algoritmo::matrizDatos[i].size() >= 2) {
-            int clase = (i < Algoritmo::listaIndices.size()) ? Algoritmo::listaIndices[i] : -1;
+    for (size_t i = 0; i < maxmin::matrizDatos.size(); ++i) {
+        if (maxmin::matrizDatos[i].size() >= 2) {
+            int clase = (i < maxmin::listaIndices.size()) ? maxmin::listaIndices[i] : -1;
 
-            double posX = toScreenX(Algoritmo::matrizDatos[i][0]);
-            double posY = toScreenY(Algoritmo::matrizDatos[i][1]);
+            double posX = toScreenX(maxmin::matrizDatos[i][0]);
+            double posY = toScreenY(maxmin::matrizDatos[i][1]);
 
             // 1. Dibujar el punto normal (elipse)
             gc->SetBrush(wxBrush(clase == -1 ? paleta[0] : paleta[(clase + 1) % paleta.size()]));
@@ -154,9 +154,9 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
             // 2. Comprobar si este punto es el centro de su clase
             bool esCentro = false;
             // Validamos que tenga una clase asignada y que la matrizDistancias tenga registrada esa columna
-            if (clase != -1 && clase < (int)Algoritmo::matrizDistancias[i].size()) {
+            if (clase != -1 && clase < (int)maxmin::matrizDistancias[i].size()) {
                 // Si la distancia a su propio centro es exactamente 0, significa que ESTE es el centro
-                if (Algoritmo::matrizDistancias[i][clase] == 0.0f) {
+                if (maxmin::matrizDistancias[i][clase] == 0.0f) {
                     esCentro = true;
                 }
             }
@@ -183,7 +183,7 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
 
     // Restaurar parámetros visuales para la leyenda
     int maxClaseEncontrada = -1;
-    for (int c : Algoritmo::listaIndices) {
+    for (int c : maxmin::listaIndices) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
     }
 
@@ -225,8 +225,8 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     };
 
     double maxVal = 1.0; 
-    if (!Algoritmo::matrizDatos.empty()) {
-        for (const auto& fila : Algoritmo::matrizDatos) {
+    if (!maxmin::matrizDatos.empty()) {
+        for (const auto& fila : maxmin::matrizDatos) {
             for (double val : fila) if (val > maxVal) maxVal = val;
         }
     }
@@ -301,16 +301,16 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     gc->StrokeLine(origenX, origenY, finX, finY);
     gc->DrawText("Z", finX - 15, finY - 15);
 
-    if (!Algoritmo::matrizDatos.empty()) {
+    if (!maxmin::matrizDatos.empty()) {
         gc->SetPen(wxPen(wxColour(180, 180, 180), 1, wxPENSTYLE_DOT));
         double radioPunto = 5.0;
 
-        for (size_t i = 0; i < Algoritmo::matrizDatos.size(); ++i) {
-            double xMat = Algoritmo::matrizDatos[i].size() > 0 ? Algoritmo::matrizDatos[i][0] : 0;
-            double yMat = Algoritmo::matrizDatos[i].size() > 1 ? Algoritmo::matrizDatos[i][1] : 0;
-            double zMat = Algoritmo::matrizDatos[i].size() > 2 ? Algoritmo::matrizDatos[i][2] : 0;
+        for (size_t i = 0; i < maxmin::matrizDatos.size(); ++i) {
+            double xMat = maxmin::matrizDatos[i].size() > 0 ? maxmin::matrizDatos[i][0] : 0;
+            double yMat = maxmin::matrizDatos[i].size() > 1 ? maxmin::matrizDatos[i][1] : 0;
+            double zMat = maxmin::matrizDatos[i].size() > 2 ? maxmin::matrizDatos[i][2] : 0;
 
-            int clase = (i < Algoritmo::listaIndices.size()) ? Algoritmo::listaIndices[i] : -1;
+            int clase = (i < maxmin::listaIndices.size()) ? maxmin::listaIndices[i] : -1;
             wxColour colorGrupo = (clase == -1) ? paleta[0] : paleta[(clase + 1) % paleta.size()];
 
             double px, py, pisoX, pisoY;
@@ -325,7 +325,7 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     }
 
     int maxClaseEncontrada = -1;
-    for (int c : Algoritmo::listaIndices) {
+    for (int c : maxmin::listaIndices) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
     }
 

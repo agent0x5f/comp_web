@@ -1,11 +1,11 @@
-#ifndef ALGORITMO_H
-#define ALGORITMO_H
+#ifndef maxmin_H
+#define maxmin_H
 
 #include <string>
 #include <vector>
 class wxTextCtrl;
 
-class Algoritmo {
+class maxmin {
 public:
     static std::vector<std::vector<double>> matrizDatos;
     static std::vector<int>listaIndices;

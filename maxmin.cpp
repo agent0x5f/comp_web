@@ -1,4 +1,4 @@
-#include "algoritmo.h"
+#include "maxmin.h"
 #include <wx/wx.h>
 #include <filesystem>
 #include <fstream>
@@ -11,19 +11,19 @@ using namespace std;
 string datos; //guarda el dataset de entrada
 int num_param = 0; //argc
 vector<int>params; //args
-vector<vector<double>> Algoritmo::matrizDatos; //los datos de entrada
-vector<int> Algoritmo::listaIndices;  //las asignaciones de las clases
-bool Algoritmo::verbo = true; //mostrar todas las calculaciones.
-int Algoritmo::seed = 1; //semilla para el random
+vector<vector<double>> maxmin::matrizDatos; //los datos de entrada
+vector<int> maxmin::listaIndices;  //las asignaciones de las clases
+bool maxmin::verbo = true; //mostrar todas las calculaciones.
+int maxmin::seed = 1; //semilla para el random
 int num_clases = 0; //cuantas clases existen actualmente.
-double Algoritmo::umbral = 0.5; //parametro del min-max
-double Algoritmo::dist_mayor = 0; //elemento mayor distancia
-vector<vector<float>> Algoritmo::matrizDistancias;  //distancias de cada elemento con respecto al resto -equivale a columnas del excel
+double maxmin::umbral = 0.5; //parametro del min-max
+double maxmin::dist_mayor = 0; //elemento mayor distancia
+vector<vector<float>> maxmin::matrizDistancias;  //distancias de cada elemento con respecto al resto -equivale a columnas del excel
 double dist_mayor_inicial = 0;
 int limite = 0;//iteraciones de creacion de clases, solo para debug/limitar casos de error
 
 //recibe el índice y retorna un string con todos los elementos en formato x, y...
-string Algoritmo::logM(const int pos) {
+string maxmin::logM(const int pos) {
     string msg = "[";
     for (size_t i = 0; i < matrizDatos[pos].size(); ++i) {
         msg += a2decimal(matrizDatos[pos][i]);
@@ -35,14 +35,14 @@ string Algoritmo::logM(const int pos) {
     return msg;
 }
 //recibe un string y lo imprime en *out
-void Algoritmo::log(const string& msg,wxTextCtrl *out) {
+void maxmin::log(const string& msg,wxTextCtrl *out) {
     if (out) {
         out->AppendText(msg);
         out->Update();
     }
 }
 //retorna un n al azar, usando la semilla dada
-int Algoritmo::obtenerIndiceAleatorio() {
+int maxmin::obtenerIndiceAleatorio() {
     if (matrizDatos.empty()) return -1;
     std::mt19937 generador(seed); // Inicializamos el motor con la semilla que capturamos del textbox
     //Aquí podria poner un msgbox para decir que la semilla debe ser <= al número de renglones.
@@ -51,7 +51,7 @@ int Algoritmo::obtenerIndiceAleatorio() {
 }
 
 //función auxiliar para n-dimensiones, retorna distancia
-double Algoritmo::calcularDistancia(const std::vector<double>& p1, const std::vector<double>& p2) {
+double maxmin::calcularDistancia(const std::vector<double>& p1, const std::vector<double>& p2) {
     double suma = 0.0;
     // Usamos el tamaño menor para evitar desbordamientos, aunque idealmente deberían ser iguales
     size_t dimensiones = std::min(p1.size(), p2.size());
@@ -64,7 +64,7 @@ double Algoritmo::calcularDistancia(const std::vector<double>& p1, const std::ve
 }
 
 //recibe: elemento, retorna: valor a mayor distancia de este.
-int Algoritmo::obtenerMasLejano(int indiceReferencia, wxTextCtrl *out) {
+int maxmin::obtenerMasLejano(int indiceReferencia, wxTextCtrl *out) {
     if (verbo && out) {
         log("Calculando distancias...\n",out);
     }
@@ -94,7 +94,7 @@ int Algoritmo::obtenerMasLejano(int indiceReferencia, wxTextCtrl *out) {
     return masLejano;
 }
 //recibe un elemento, retorna el elemento más cercano a este, usa euclides
-int Algoritmo::obtenerMasCercano(int indiceReferencia,wxTextCtrl *out) {
+int maxmin::obtenerMasCercano(int indiceReferencia,wxTextCtrl *out) {
     int mas_cercano = 0;
     double minDistanciaSq = 999999.0;
     // Verificamos que la matriz no esté vacía y que el índice solicitado sea válido
@@ -134,13 +134,13 @@ int Algoritmo::obtenerMasCercano(int indiceReferencia,wxTextCtrl *out) {
 }
 
 //formatea el string numérico a 2 decimales
-std::string Algoritmo::a2decimal(std::string text) {
+std::string maxmin::a2decimal(std::string text) {
     stringstream ss;
     ss << std::fixed << std::setprecision(2) << text;
     return ss.str();
 }
 //formatea el string numérico a 2 decimales
-std::string Algoritmo::a2decimal(double number) {
+std::string maxmin::a2decimal(double number) {
     stringstream ss;
     ss << std::fixed << std::setprecision(2) << number;
     return ss.str();
@@ -149,7 +149,7 @@ std::string Algoritmo::a2decimal(double number) {
 //inicializa parámetros
 //realiza la seleccion de las primeras dos clases
 //llama a la función max-min para generar las clases n:3+ hasta que se llegue al umbral.
-void Algoritmo::max_min_ini(wxTextCtrl* out) {
+void maxmin::max_min_ini(wxTextCtrl* out) {
     if (out) {
         std::fill(listaIndices.begin(), listaIndices.end(), -1);
         num_clases = 0;
@@ -190,7 +190,7 @@ void Algoritmo::max_min_ini(wxTextCtrl* out) {
             dist_mayor = dist_mayor_inicial;
 
             // Bucle para encontrar resto de centros
-            while (dist_mayor > (Algoritmo::umbral * dist_mayor_inicial) && limite < 100) {
+            while (dist_mayor > (maxmin::umbral * dist_mayor_inicial) && limite < 100) {
                 max_min(out);
                 ++limite;
             }
@@ -202,7 +202,7 @@ void Algoritmo::max_min_ini(wxTextCtrl* out) {
 //Procede al resto de la generación del algoritmo ya tenemos las primeras dos clases.
 //Recordemos que listaIndices contiene las clases
 //y que matrizDistancias las distancias entre los elementos
-void Algoritmo::max_min(wxTextCtrl *out) {
+void maxmin::max_min(wxTextCtrl *out) {
     double maxDeLasMinimas = -1.0;
     int indiceCandidato = -1;
 
@@ -240,7 +240,7 @@ void Algoritmo::max_min(wxTextCtrl *out) {
 }
 
 //asigna a las clases generadas el resto de elementos
-void Algoritmo::realizarClasificacion(wxTextCtrl *out) {
+void maxmin::realizarClasificacion(wxTextCtrl *out) {
     if(verbo && out) log("==== Clasificando elementos restantes ====\n", out);
 
     for (int i = 0; i < (int)matrizDatos.size(); ++i) {

@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include "algoritmo.h"
+#include "maxmin.h"
 
 using namespace std;
 
@@ -15,7 +15,7 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
     std::ifstream archivo(path);
     if (!archivo.is_open()) return "Error al abrir";
 
-    Algoritmo::matrizDatos.clear();
+    maxmin::matrizDatos.clear();
 
     // Leemos el archivo en un solo string para poder analizar el formato
     std::stringstream buffer;
@@ -31,7 +31,7 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
 
     // LECTURA FORMATO JSON
     if (contenido[primerCaracter] == '{') {
-        if (salida) Algoritmo::log("Detectado formato JSON...\n", salida);
+        if (salida) maxmin::log("Detectado formato JSON...\n", salida);
 
         // Extracción del Umbral
         size_t posUmbral = contenido.find("\"umbral\"");
@@ -39,10 +39,10 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
             size_t posDosPuntos = contenido.find(":", posUmbral);
             if (posDosPuntos != string::npos) {
                 try {
-                    Algoritmo::umbral = std::stod(contenido.substr(posDosPuntos + 1));
-                    if (salida) Algoritmo::log("Umbral actualizado: " + std::to_string(Algoritmo::umbral) + "\n", salida);
+                    maxmin::umbral = std::stod(contenido.substr(posDosPuntos + 1));
+                    if (salida) maxmin::log("Umbral actualizado: " + std::to_string(maxmin::umbral) + "\n", salida);
                 } catch (...) {
-                    if (salida) Algoritmo::log("Error: Formato de umbral incorrecto en el JSON.\n", salida);
+                    if (salida) maxmin::log("Error: Formato de umbral incorrecto en el JSON.\n", salida);
                 }
             }
         }
@@ -73,7 +73,7 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
                             filaActual.push_back(stod(token));
                         } catch (...) { /* Ignorar espacios extra */ }
                     }
-                    if (!filaActual.empty()) Algoritmo::matrizDatos.push_back(filaActual);
+                    if (!filaActual.empty()) maxmin::matrizDatos.push_back(filaActual);
 
                     i = finSub + 1; // Avanzar al siguiente sub-arreglo
                 }
@@ -82,7 +82,7 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
     }
     //  LECTURA FORMATO CLÁSICO (Línea por línea)
     else {
-        if (salida) Algoritmo::log("Detectado formato clásico...\n", salida);
+        if (salida) maxmin::log("Detectado formato clásico...\n", salida);
 
         stringstream ssArchivo(contenido);
         string linea;
@@ -100,10 +100,10 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
                 try {
                     size_t posDospuntos = linea.find(":") + 1;
                     string valorStr = linea.substr(posDospuntos);
-                    Algoritmo::umbral = std::stod(valorStr);
-                    if (salida) Algoritmo::log("Umbral actualizado: " + std::to_string(Algoritmo::umbral) + "\n", salida);
+                    maxmin::umbral = std::stod(valorStr);
+                    if (salida) maxmin::log("Umbral actualizado: " + std::to_string(maxmin::umbral) + "\n", salida);
                 } catch (...) {
-                    if (salida) Algoritmo::log("Error: Formato de umbral incorrecto en el archivo.\n", salida);
+                    if (salida) maxmin::log("Error: Formato de umbral incorrecto en el archivo.\n", salida);
                 }
                 continue; // No agregamos esta línea a la matriz
             }
@@ -120,13 +120,13 @@ string io::procesarEntrada(string const& path, wxTextCtrl* salida) {
             }
 
             if (!filaActual.empty()) {
-                Algoritmo::matrizDatos.push_back(filaActual);
+                maxmin::matrizDatos.push_back(filaActual);
             }
         }
     }
 
     // Inicializar listaIndices con -1 según el tamaño de los datos leídos
-    Algoritmo::listaIndices.assign(Algoritmo::matrizDatos.size(), -1);
+    maxmin::listaIndices.assign(maxmin::matrizDatos.size(), -1);
 
     std::filesystem::path p(path);
     return p.filename().string();
