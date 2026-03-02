@@ -233,7 +233,7 @@ void Algoritmo::max_min(wxTextCtrl *out) {
 
         dist_mayor = maxDeLasMinimas; 
     } else {
-        log("====== Fin de búsqueda de centros ====== \n",out);
+        log("====== Fin de busqueda de centros ====== \n",out);
         log("Max dist. rest. (" + a2decimal(maxDeLasMinimas) + ") no supera umbral (" + a2decimal(umbralReal) + ").\n", out);
         dist_mayor = 0; 
     }
@@ -247,14 +247,15 @@ void Algoritmo::realizarClasificacion(wxTextCtrl *out) {
         if (listaIndices[i] == -1) { // Solo clasificamos los que no son centros
 
             // Encontrar la posición de la distancia mínima en el vector de distancias de este punto.
-            // Esa posición (índice) equivale exactamente al número de la clase/centro.
+            // Ese índice equivale al número de la clase/centro.
+            // Busco el elemento mas pequeño de la lista
             auto min_it = std::min_element(matrizDistancias[i].begin(), matrizDistancias[i].end());
             int claseAsignada = std::distance(matrizDistancias[i].begin(), min_it);
 
             listaIndices[i] = claseAsignada;
 
             if (verbo && out) {
-                log("Elemento " + logM(i) + " -> Clase " + to_string(claseAsignada) + "\n", out);
+                log("Elemento " + logM(i) + " -> Clase " + to_string(claseAsignada+1) +", D: "+ a2decimal(*min_it) + "\n", out);
             }
         }
     }

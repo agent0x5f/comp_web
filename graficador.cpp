@@ -127,6 +127,7 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     gc->SetPen(wxPen(wxColour(220, 220, 220), 1));
     gc->SetFont(wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT), wxColour(80, 80, 80));
 
+    // Dibujo de la cuadrícula
     for (int i = 0; i <= divisiones; ++i) {
         double curX = toScreenX(minX + i * pasoXMat);
         gc->StrokeLine(curX, margin, curX, h - margin);
@@ -137,14 +138,50 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
         gc->DrawText(wxString::Format("%d", minY + i * pasoYMat), margin - 25, curY - 7);
     }
 
+    // --- SECCIÓN DE DIBUJO DE PUNTOS Y CENTROS ---
     for (size_t i = 0; i < Algoritmo::matrizDatos.size(); ++i) {
         if (Algoritmo::matrizDatos[i].size() >= 2) {
             int clase = (i < Algoritmo::listaIndices.size()) ? Algoritmo::listaIndices[i] : -1;
+
+            double posX = toScreenX(Algoritmo::matrizDatos[i][0]);
+            double posY = toScreenY(Algoritmo::matrizDatos[i][1]);
+
+            // 1. Dibujar el punto normal (elipse)
             gc->SetBrush(wxBrush(clase == -1 ? paleta[0] : paleta[(clase + 1) % paleta.size()]));
-            gc->DrawEllipse(toScreenX(Algoritmo::matrizDatos[i][0]) - 9, toScreenY(Algoritmo::matrizDatos[i][1]) - 9, 18, 18);
+            gc->SetPen(wxPen(clase == -1 ? paleta[0] : paleta[(clase + 1) % paleta.size()], 1));
+            gc->DrawEllipse(posX - 9, posY - 9, 18, 18);
+
+            // 2. Comprobar si este punto es el centro de su clase
+            bool esCentro = false;
+            // Validamos que tenga una clase asignada y que la matrizDistancias tenga registrada esa columna
+            if (clase != -1 && clase < (int)Algoritmo::matrizDistancias[i].size()) {
+                // Si la distancia a su propio centro es exactamente 0, significa que ESTE es el centro
+                if (Algoritmo::matrizDistancias[i][clase] == 0.0f) {
+                    esCentro = true;
+                }
+            }
+
+            // 3. Si es un centro, dibujamos el asterisco y resaltamos el borde
+            if (esCentro) {
+                // Dibujar el asterisco
+                gc->SetFont(wxFontInfo(14).Bold(), *wxBLACK);
+                double textWidth, textHeight;
+                gc->GetTextExtent("*", &textWidth, &textHeight);
+                gc->DrawText("*", posX - (textWidth / 2.0), posY - (textHeight / 2.0) + 2);
+
+                // Dibujar un borde negro para que el centro destaque más
+                gc->SetPen(wxPen(*wxBLACK, 1));
+                gc->SetBrush(*wxTRANSPARENT_BRUSH);
+                gc->DrawEllipse(posX - 9, posY - 9, 18, 18);
+
+                // Restauramos el pen nulo por seguridad
+                gc->SetPen(wxNullPen);
+            }
         }
     }
+    // --- FIN SECCIÓN DE PUNTOS ---
 
+    // Restaurar parámetros visuales para la leyenda
     int maxClaseEncontrada = -1;
     for (int c : Algoritmo::listaIndices) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
@@ -154,14 +191,17 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     int leyendaY = margin;
     wxFont fuente = wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT);
     gc->SetFont(fuente, *wxBLACK);
-    gc->DrawText("Grupos Encontrados:", leyendaX, leyendaY);
+    gc->DrawText("Grupos:", leyendaX, leyendaY);
     leyendaY += 25;
 
+    // Leyenda: Sin asignar
     gc->SetBrush(wxBrush(paleta[0]));
+    gc->SetPen(wxNullPen);
     gc->DrawEllipse(leyendaX, leyendaY, 12, 12);
     gc->DrawText("Sin asignar", leyendaX + 20, leyendaY - 1);
     leyendaY += 22;
 
+    // Leyenda: Grupos creados
     for (int i = 0; i <= maxClaseEncontrada; ++i) {
         wxColour colorGrupo = paleta[(i + 1) % paleta.size()];
         gc->SetBrush(wxBrush(colorGrupo));
@@ -294,7 +334,7 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     int leyendaX = w - rightMargin + 20;
     int leyendaY = margin;
     gc->SetFont(fuenteLeyenda, *wxBLACK);
-    gc->DrawText("Grupos (Vista 3D):", leyendaX, leyendaY);
+    gc->DrawText("Grupos:", leyendaX, leyendaY);
     leyendaY += 25;
 
     gc->SetBrush(wxBrush(paleta[0]));

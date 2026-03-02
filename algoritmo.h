@@ -14,7 +14,6 @@ public:
     static double umbral;
     static double dist_mayor;
     static std::vector<std::vector<float>> matrizDistancias;
-
     static void max_min_ini(wxTextCtrl *out);
     static void realizarClasificacion(wxTextCtrl *out);
     static std::string logM(int pos);
@@ -28,6 +27,7 @@ public:
     static std::string a2decimal(double number);
 
     static double calcularDistancia(const std::vector<double>& p1, const std::vector<double>& p2);
+
 };
 
 #endif
