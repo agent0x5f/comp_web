@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include "io.h"
+#include "chainmap.h"
 using namespace std;
 
 MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxSize(1280, 720)) {
@@ -84,30 +85,45 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
 }
 
 void MyFrame::OnCalculaClick(wxCommandEvent& event) {
-   int algoritmoSeleccionado = choice->GetSelection();
-    //si de alguna forma hizo clic sin seleccionar, cancelamos
-    if (algoritmoSeleccionado == wxNOT_FOUND) {
-        wxMessageBox("Por favor selecciona un algoritmo primero.", "Aviso", wxICON_WARNING);
-        return;
-    }
-    SetStatusText("Cálculo ejecutado...");
-    // Ejecutamos el algoritmo según la opción
+    // 1. Validar selección
+    int algoritmoSeleccionado = choice->GetSelection();
+
+    // 2. Obtener parámetros de la interfaz (Ejemplo: Semilla)
+    long semilla_ui = 1;
+    textbox1->GetValue().ToLong(&semilla_ui); // Lee el valor de tu textbox1 y lo convierte a número
+    // Preparar UI
+    SetStatusText("Cálculo en proceso...");
+    consola->Clear();
+    canvas->LimpiarGrafico();
+    // 3. Ejecutar el algoritmo correspondiente
     switch (algoritmoSeleccionado) {
-        case 0: maxmin::max_min_ini(consola);break;
-        case 1: break;
-        default:
-            log("Error: Algoritmo no reconocido.\n", consola);
+        case 0: // Opción: "Max-Min"
+            maxmin::seed = (int)semilla_ui;
+            maxmin::max_min_ini(consola);
+            // Le pasamos los datos de maxmin al graficador
+            canvas->SetDatos(maxmin::matrizDatos, maxmin::listaIndices, true);
+            break;
+        case 1: // Opción: "Chain Map"
+            chainmap::seed = (int)semilla_ui;
+            chainmap::matrizDatos = maxmin::matrizDatos;
+            chainmap::umbral = maxmin::umbral;
+            chainmap::ejecutar(consola);
+            // Le pasamos los datos de chainmap al graficador
+            canvas->SetDatos(chainmap::matrizDatos, chainmap::listaIndices, false);
             break;
     }
-    // Actualizamos el canvas después de que el algoritmo termine
+    // Ahora sí, cuando haga Refresh, tendrá los datos correctos
     canvas->Refresh();
+    SetStatusText("Cálculo finalizado.");
 }
 
 
-void MyFrame::OnlimpiaClick(wxCommandEvent &event){
-    consola->Clear();
+void MyFrame::OnlimpiaClick(wxCommandEvent& event) {
+    if (consola) { consola->Clear();}
+    if (canvas) {canvas->LimpiarGrafico();}
+    textbox2->Clear();
+    SetStatusText("Interfaz y gráficos limpiados.");
 }
-
 void MyFrame::OnEscritura(wxCommandEvent& event){
     // Obtenemos el texto del textbox que disparó el evento
     wxString texto = event.GetString();

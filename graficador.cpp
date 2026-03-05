@@ -17,6 +17,8 @@ MyGraphCanvas::MyGraphCanvas(wxWindow* parent, wxPoint pos, wxSize size)
     Bind(wxEVT_MOTION, &MyGraphCanvas::OnMouseMotion, this);
 }
 
+
+
 void MyGraphCanvas::SetModo3D(bool activar3D) {
     modo3D = activar3D;
     Refresh();
@@ -88,11 +90,12 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     double minXReal = 0.0, maxXReal = 0.0;
     double minYReal = 0.0, maxYReal = 0.0;
 
-    if (!maxmin::matrizDatos.empty()) {
-        if (maxmin::matrizDatos[0].size() > 0) minXReal = maxXReal = maxmin::matrizDatos[0][0];
-        if (maxmin::matrizDatos[0].size() > 1) minYReal = maxYReal = maxmin::matrizDatos[0][1];
+    // AHORA USA LA VARIABLE GENÉRICA
+    if (!puntos_plot.empty()) {
+        if (puntos_plot[0].size() > 0) minXReal = maxXReal = puntos_plot[0][0];
+        if (puntos_plot[0].size() > 1) minYReal = maxYReal = puntos_plot[0][1];
 
-        for (const auto& fila : maxmin::matrizDatos) {
+        for (const auto& fila : puntos_plot) {
             if (fila.size() > 0) {
                 if (fila[0] < minXReal) minXReal = fila[0];
                 if (fila[0] > maxXReal) maxXReal = fila[0];
@@ -128,7 +131,6 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     gc->SetPen(wxPen(wxColour(220, 220, 220), 1));
     gc->SetFont(wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT), wxColour(80, 80, 80));
 
-    // Dibujo de la cuadrícula
     for (int i = 0; i <= divisiones; ++i) {
         double curX = toScreenX(minX + i * pasoXMat);
         gc->StrokeLine(curX, margin, curX, h - margin);
@@ -139,52 +141,38 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
         gc->DrawText(wxString::Format("%d", minY + i * pasoYMat), margin - 25, curY - 7);
     }
 
-    // --- SECCIÓN DE DIBUJO DE PUNTOS Y CENTROS ---
-    for (size_t i = 0; i < maxmin::matrizDatos.size(); ++i) {
-        if (maxmin::matrizDatos[i].size() >= 2) {
-            int clase = (i < maxmin::listaIndices.size()) ? maxmin::listaIndices[i] : -1;
+    // --- SECCIÓN DE PUNTOS ---
+    for (size_t i = 0; i < puntos_plot.size(); ++i) {
+        if (puntos_plot[i].size() >= 2) {
+            int clase = (i < clases_plot.size()) ? clases_plot[i] : -1;
 
-            double posX = toScreenX(maxmin::matrizDatos[i][0]);
-            double posY = toScreenY(maxmin::matrizDatos[i][1]);
+            double posX = toScreenX(puntos_plot[i][0]);
+            double posY = toScreenY(puntos_plot[i][1]);
 
-            // 1. Dibujar el punto normal (elipse)
             gc->SetBrush(wxBrush(clase == -1 ? paleta[0] : paleta[(clase + 1) % paleta.size()]));
             gc->SetPen(wxPen(clase == -1 ? paleta[0] : paleta[(clase + 1) % paleta.size()], 1));
             gc->DrawEllipse(posX - 9, posY - 9, 18, 18);
 
-            // 2. Comprobar si este punto es el centro de su clase
-            bool esCentro = false;
-            // Validamos que tenga una clase asignada y que la matrizDistancias tenga registrada esa columna
-            if (clase != -1 && clase < (int)maxmin::matrizDistancias[i].size()) {
-                // Si la distancia a su propio centro es exactamente 0, significa que ESTE es el centro
-                if (maxmin::matrizDistancias[i][clase] == 0.0f) {
-                    esCentro = true;
+            // Verificación segura para los centros (solo si es Max-Min)
+            if (dibujar_centros && clase != -1) {
+                if (i < maxmin::matrizDistancias.size() && clase < (int)maxmin::matrizDistancias[i].size()) {
+                    if (maxmin::matrizDistancias[i][clase] == 0.0f) {
+                        gc->SetFont(wxFontInfo(14).Bold(), *wxBLACK);
+                        double textWidth, textHeight;
+                        gc->GetTextExtent("*", &textWidth, &textHeight);
+                        gc->DrawText("*", posX - (textWidth / 2.0), posY - (textHeight / 2.0) + 2);
+                        gc->SetPen(wxPen(*wxBLACK, 1));
+                        gc->SetBrush(*wxTRANSPARENT_BRUSH);
+                        gc->DrawEllipse(posX - 9, posY - 9, 18, 18);
+                        gc->SetPen(wxNullPen);
+                    }
                 }
-            }
-
-            // 3. Si es un centro, dibujamos el asterisco y resaltamos el borde
-            if (esCentro) {
-                // Dibujar el asterisco
-                gc->SetFont(wxFontInfo(14).Bold(), *wxBLACK);
-                double textWidth, textHeight;
-                gc->GetTextExtent("*", &textWidth, &textHeight);
-                gc->DrawText("*", posX - (textWidth / 2.0), posY - (textHeight / 2.0) + 2);
-
-                // Dibujar un borde negro para que el centro destaque más
-                gc->SetPen(wxPen(*wxBLACK, 1));
-                gc->SetBrush(*wxTRANSPARENT_BRUSH);
-                gc->DrawEllipse(posX - 9, posY - 9, 18, 18);
-
-                // Restauramos el pen nulo por seguridad
-                gc->SetPen(wxNullPen);
             }
         }
     }
-    // --- FIN SECCIÓN DE PUNTOS ---
 
-    // Restaurar parámetros visuales para la leyenda
     int maxClaseEncontrada = -1;
-    for (int c : maxmin::listaIndices) {
+    for (int c : clases_plot) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
     }
 
@@ -195,14 +183,12 @@ void MyGraphCanvas::Dibujar2D(wxGraphicsContext* gc, int w, int h) {
     gc->DrawText("Grupos:", leyendaX, leyendaY);
     leyendaY += 25;
 
-    // Leyenda: Sin asignar
     gc->SetBrush(wxBrush(paleta[0]));
     gc->SetPen(wxNullPen);
     gc->DrawEllipse(leyendaX, leyendaY, 12, 12);
     gc->DrawText("Sin asignar", leyendaX + 20, leyendaY - 1);
     leyendaY += 22;
 
-    // Leyenda: Grupos creados
     for (int i = 0; i <= maxClaseEncontrada; ++i) {
         wxColour colorGrupo = paleta[(i + 1) % paleta.size()];
         gc->SetBrush(wxBrush(colorGrupo));
@@ -225,16 +211,16 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
         wxColour(128, 0, 255), wxColour(0, 255, 127)
     };
 
-    double maxVal = 1.0; 
-    if (!maxmin::matrizDatos.empty()) {
-        for (const auto& fila : maxmin::matrizDatos) {
+    double maxVal = 1.0;
+    if (!puntos_plot.empty()) {
+        for (const auto& fila : puntos_plot) {
             for (double val : fila) if (val > maxVal) maxVal = val;
         }
     }
-    
-    int divisiones = 5; 
+
+    int divisiones = 5;
     int pasoMat = std::max(1, (int)std::ceil(maxVal / divisiones));
-    int maxGrid = pasoMat * divisiones; 
+    int maxGrid = pasoMat * divisiones;
     double escala = std::min(centroX - margin, centroY - margin) / (maxGrid * 1.2);
 
     auto proyectar = [&](double xOriginal, double yOriginal, double z, double& px, double& py) {
@@ -251,7 +237,7 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     fuenteTextos.SetPointSize(9);
     gc->SetFont(fuenteTextos, wxColour(100, 100, 100));
 
-    gc->SetPen(wxPen(wxColour(230, 230, 230), 1)); 
+    gc->SetPen(wxPen(wxColour(230, 230, 230), 1));
     double px1, py1, px2, py2;
 
     for (int i = 0; i <= divisiones; ++i) {
@@ -287,31 +273,31 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     double origenX, origenY, finX, finY;
     proyectar(0, 0, 0, origenX, origenY);
 
-    gc->SetPen(wxPen(wxColour(255, 80, 80), 3)); 
+    gc->SetPen(wxPen(wxColour(255, 80, 80), 3));
     proyectar(maxGrid + (pasoMat*0.5), 0, 0, finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
     gc->DrawText("X", finX + 5, finY);
 
-    gc->SetPen(wxPen(wxColour(80, 200, 80), 3)); 
+    gc->SetPen(wxPen(wxColour(80, 200, 80), 3));
     proyectar(0, maxGrid + (pasoMat*0.5), 0, finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
     gc->DrawText("Y", finX, finY + 5);
 
-    gc->SetPen(wxPen(wxColour(80, 80, 255), 3)); 
+    gc->SetPen(wxPen(wxColour(80, 80, 255), 3));
     proyectar(0, 0, maxGrid + (pasoMat*0.5), finX, finY);
     gc->StrokeLine(origenX, origenY, finX, finY);
     gc->DrawText("Z", finX - 15, finY - 15);
 
-    if (!maxmin::matrizDatos.empty()) {
+    if (!puntos_plot.empty()) {
         gc->SetPen(wxPen(wxColour(180, 180, 180), 1, wxPENSTYLE_DOT));
         double radioPunto = 5.0;
 
-        for (size_t i = 0; i < maxmin::matrizDatos.size(); ++i) {
-            double xMat = maxmin::matrizDatos[i].size() > 0 ? maxmin::matrizDatos[i][0] : 0;
-            double yMat = maxmin::matrizDatos[i].size() > 1 ? maxmin::matrizDatos[i][1] : 0;
-            double zMat = maxmin::matrizDatos[i].size() > 2 ? maxmin::matrizDatos[i][2] : 0;
+        for (size_t i = 0; i < puntos_plot.size(); ++i) {
+            double xMat = puntos_plot[i].size() > 0 ? puntos_plot[i][0] : 0;
+            double yMat = puntos_plot[i].size() > 1 ? puntos_plot[i][1] : 0;
+            double zMat = puntos_plot[i].size() > 2 ? puntos_plot[i][2] : 0;
 
-            int clase = (i < maxmin::listaIndices.size()) ? maxmin::listaIndices[i] : -1;
+            int clase = (i < clases_plot.size()) ? clases_plot[i] : -1;
             wxColour colorGrupo = (clase == -1) ? paleta[0] : paleta[(clase + 1) % paleta.size()];
 
             double px, py, pisoX, pisoY;
@@ -326,7 +312,7 @@ void MyGraphCanvas::Dibujar3D(wxGraphicsContext* gc, int w, int h) {
     }
 
     int maxClaseEncontrada = -1;
-    for (int c : maxmin::listaIndices) {
+    for (int c : clases_plot) {
         if (c > maxClaseEncontrada) maxClaseEncontrada = c;
     }
 

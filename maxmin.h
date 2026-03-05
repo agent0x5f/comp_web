@@ -14,6 +14,8 @@ public:
     static double umbral;
     static double dist_mayor;
     static std::vector<std::vector<double>> matrizDistancias;
+    static int num_clases;
+
     static void max_min_ini(wxTextCtrl *out);
     static void realizarClasificacion(wxTextCtrl *out);
     static std::string logM(int pos);

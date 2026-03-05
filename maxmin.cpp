@@ -15,13 +15,12 @@ vector<vector<double>> maxmin::matrizDatos; //los datos de entrada
 vector<int> maxmin::listaIndices;  //las asignaciones de las clases
 bool maxmin::verbo = true; //mostrar todas las calculaciones.
 int maxmin::seed = 1; //semilla para el random
-int num_clases = 0; //cuantas clases existen actualmente.
 double maxmin::umbral = 0.5; //parametro del min-max
 double maxmin::dist_mayor = 0; //elemento mayor distancia
 vector<vector<double>> maxmin::matrizDistancias;  //distancias de cada elemento con respecto al resto -equivale a columnas del excel
 double dist_mayor_inicial = 0;
 int limite = 0;//iteraciones de creacion de clases, solo para debug/limitar casos de error
-
+int maxmin::num_clases = 0;
 //recibe el índice y retorna un string con todos los elementos en formato x, y...
 string maxmin::logM(const int pos) {
     string msg = "[";
@@ -135,8 +134,14 @@ std::string maxmin::a2decimal(double number) {
 //llama a la función max-min para generar las clases n:3+ hasta que se llegue al umbral.
 void maxmin::max_min_ini(wxTextCtrl* out) {
     if (out) {
-        std::fill(listaIndices.begin(), listaIndices.end(), -1);
+        // Reiniciar contador de clases
         num_clases = 0;
+        dist_mayor = 0.0;
+        limite = 0;
+        // Destruir y recrear la lista de índices
+        listaIndices.assign(matrizDatos.size(), -1);
+        // Vaciar la matriz de distancias de la corrida anterior
+        matrizDistancias.assign(matrizDatos.size(), std::vector<double>());
         log("Algoritmo Max-Min\n",out);
         // Primer Centro
         int n = obtenerIndiceAleatorio(); //toma uno al azar, se basa en la semilla en la GUI
@@ -237,4 +242,5 @@ void maxmin::realizarClasificacion(wxTextCtrl *out) {
             }
         }
     }
+    log("Terminado. Clases generadas: "+ a2decimal(num_clases+1),out);
 }
