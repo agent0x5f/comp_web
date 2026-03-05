@@ -5,7 +5,8 @@
 #ifndef APPVISIONCENIDET_CHAINMAP_H
 #define APPVISIONCENIDET_CHAINMAP_H
 #include <vector>
-#include <bits/basic_string.h>
+#include <iostream>
+#include <fstream>
 #include  <wx/wx.h>
 
 class chainmap {
