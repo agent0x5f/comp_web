@@ -31,6 +31,8 @@ set(SOURCE_FILES
         chainmap.cpp
         chainmap.h
         resource.rc
+        kmeans.cpp
+        kmeans.h
 )
 
 # --- 5. CREAR EL EJECUTABLE ---

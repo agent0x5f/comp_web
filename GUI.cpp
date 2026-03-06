@@ -7,6 +7,7 @@
 #include <sstream>
 #include "io.h"
 #include "chainmap.h"
+#include "kmeans.h"
 using namespace std;
 
 MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxSize(1280, 720)) {
@@ -22,6 +23,7 @@ MyFrame::MyFrame() : wxFrame(nullptr, wxID_ANY, "Programa", wxPoint(50, 50), wxS
     wxArrayString opciones;
     opciones.Add("Max-Min");
     opciones.Add("Chain-map");
+    opciones.Add("k-Means");
     //opciones.Add("soon TM");
     choice = new wxChoice(panel, wxID_ANY, wxPoint(280, 10), wxDefaultSize, opciones);
     choice->Bind(wxEVT_CHOICE, &MyFrame::OnAlgoritmoSelect, this);
@@ -74,7 +76,6 @@ void MyFrame::OnOpenExplorer(const wxCommandEvent& event) {
         string datos = buffer.str();
         textbox2->SetValue(datos);
         log("Datos cargados\n",consola);
-        log("Semilla predeterminada: 1\n",consola);
         canvas->Refresh();
         if (choice->GetSelection() != wxNOT_FOUND && !maxmin::matrizDatos.empty()) {
             calcula->Enable();
@@ -110,6 +111,12 @@ void MyFrame::OnCalculaClick(wxCommandEvent& event) {
             chainmap::ejecutar(consola);
             // Le pasamos los datos de chainmap al graficador
             canvas->SetDatos(chainmap::matrizDatos, chainmap::listaIndices, false);
+            break;
+        case 2: // Opción: "k-means"
+            kmeans::seed = (int)semilla_ui;
+            kmeans::matrizDatos = maxmin::matrizDatos;
+            kmeans::ejecutar(consola);
+            canvas->SetDatos(kmeans::matrizDatos, kmeans::listaIndices, false);
             break;
     }
     // Ahora sí, cuando haga Refresh, tendrá los datos correctos
